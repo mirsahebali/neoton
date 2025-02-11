@@ -1,4 +1,8 @@
-#include "boost/regex.hpp"
+
+
+#include "image.h"
+#include "server.h"
+
 #include <drogon/HttpAppFramework.h>
 int main() {
 

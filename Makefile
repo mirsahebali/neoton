@@ -11,7 +11,7 @@ install-deps:
 configure:
 	cd build && cmake .. -DCMAKE_TOOLCHAIN_FILE=conan_toolchain.cmake -DCMAKE_BUILD_TYPE=${BUILD_TYPE}
 
-build:
+build-bin:
 	cmake --build build
 
 run:
