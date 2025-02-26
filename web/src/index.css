@@ -1,0 +1,6 @@
+@import "tailwindcss";
+
+
+@theme {
+	--font-lexend: "Lexend 400", sans-serif
+}

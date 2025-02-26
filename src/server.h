@@ -1,6 +1,14 @@
-#ifndef SERVER_H
-#define SERVER_H
+#pragma once
+#include "auth/otp.h"
+
+#include <map>
+#include <string>
+
+class Server {
+public:
+  std::map<std::string, OTP> otp_map;
+  int port = 8080;
+  Server() {}
+};
 
 void start_server();
-
-#endif // !SERVER_HPP

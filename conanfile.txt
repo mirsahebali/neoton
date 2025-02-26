@@ -1,10 +1,14 @@
 [requires]
 drogon/1.9.9
 boost/1.83.0
+cpp-jwt/1.4
 
 [generators]
 CMakeDeps
 CMakeToolchain
 
-[tool_requires]
-cmake/3.22.6
+[options]
+drogon/1.9.9:with_ctl=True
+drogon/1.9.9:with_orm=True
+drogon/1.9.9:with_sqlite=True
+
