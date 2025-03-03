@@ -1,6 +1,7 @@
 .PHONY= profile install-deps configure build-bin run all
 
 BUILD_TYPE ?= Debug
+DEV_ENV ?= dev
 
 # Backend build commands
 profile:
@@ -16,15 +17,19 @@ configure:
 	cd build && cmake .. -DCMAKE_TOOLCHAIN_FILE=conan_toolchain.cmake -DCMAKE_BUILD_TYPE=${BUILD_TYPE}
 
 build-bin:
-	cmake --build build
+	 cmake --build build
 
 run:
-	./build/neolink
+	DEV_ENV=${DEV_ENV} ./build/neolink
+
+build-run: build-bin run
+
+clean-build: clean install-deps configure build-bin
 
 # Frontend build commands
 
 build-web:
-	cd web && npm i && rm -rf dist && npm run dist
+	cd web && npm i && rm -rf dist && npm run build
 
 run-build-web:
 	cd web && (test -d node_modules || npm i) &&  (test -d dist ||  npm run build) && npm run preview

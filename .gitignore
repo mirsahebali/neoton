@@ -1,6 +1,7 @@
 build
 .cache
 uploads
+*.db
 # Logs
 web/logs
 web/*.log

@@ -1,10 +1,32 @@
 import { createSignal } from "solid-js";
 import { to } from "../utils/route";
+import { action } from "@solidjs/router";
+
+/**
+ * @param {FormData} formData - form data for user login
+ */
+async function loginUser(formData) {
+  fetch(to("/user/login"), {
+    method: "post",
+    body: JSON.stringify({ email: formData.get("email") }),
+    headers: {
+      "Content-Type": "application/json",
+    },
+  })
+    .then(async (data) => console.table(data))
+    .catch((err) =>
+      console.error("ERROR: sending the data body to the server", err),
+    )
+    .finally(() => console.log("request completed"));
+}
+
+const handleLogin = action(loginUser);
 
 function LogInPage() {
   const [enablePassword, setEnablePassword] = createSignal(false);
+
   return (
-    <form action={to("/user/login")} class="flex flex-col gap-4 w-66">
+    <form action={handleLogin} method="post" class="flex flex-col gap-4 w-66">
       <input
         name="email"
         type="text"
@@ -24,7 +46,7 @@ function LogInPage() {
       </span>
       {enablePassword() && (
         <input
-          name="email"
+          name="password"
           type="text"
           class="border px-2 py-1"
           placeholder="Password (not recommended)"
