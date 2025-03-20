@@ -2,46 +2,32 @@ cmake_minimum_required(VERSION 3.15)
 
 project(neolink LANGUAGES CXX)
 
+# Set the C++ standard (adjust as needed)
+set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
-find_package(Boost REQUIRED)
+# Locate required packages
 find_package(Drogon REQUIRED)
 find_package(cpp-jwt REQUIRED)
+find_package(SQLite3 REQUIRED)
+find_package(spdlog REQUIRED)
 
-message("Building with CMake version: ${CMAKE_VERSION}")
+message(STATUS "Building with CMake version: ${CMAKE_VERSION}")
 
+# Define absolute paths for source directories
+set(SRC_DIR ${CMAKE_CURRENT_SOURCE_DIR}/src)
 
-set(PROJECT_SOURCE_DIR src)
-set(DB_SOURCE_DIR src/db)
-set(CONTROLLER_SOURCE_DIR src/controllers)
-set(MIDDLEWARE_SOURCE_DIR src/middlewares)
-set(UTILS_DIR src/utils)
-set(SCHEMA_DIR src/schema)
+# Glob all source files from each directory
+file(GLOB SRC_FILES CONFIGURE_DEPENDS ${SRC_DIR}/*.cc)
 
-file(GLOB DB_FILES ${PROJECT_SOURCE_DIR}/db/*.cc)
-file(GLOB SCHEMA_FILES ${PROJECT_SOURCE_DIR}/schema/*.cc)
-file(GLOB CONTROLLER_FILES ${PROJECT_SOURCE_DIR}/controllers/*.cc)
-file(GLOB MIDDLEWARE_FILES ${PROJECT_SOURCE_DIR}/middlewares/*.cc)
-file(GLOB UTILS_FILES ${PROJECT_SOURCE_DIR}/utils/*.cc)
+# Create the executable target and add all sources
+add_executable(
+    ${PROJECT_NAME}
+    ${SRC_FILES})
 
-include_directories(${PROJECT_SOURCE_DIR})
-include_directories(${DB_SOURCE_DIR})
-include_directories(${CONTROLLER_SOURCE_DIR})
-include_directories(${MIDDLEWARE_SOURCE_DIR})
-include_directories(${UTILS_DIR})
-include_directories(${SCHEMA_DIR})
+# Specify include directories for the target
+target_include_directories(${PROJECT_NAME} PRIVATE ${SRC_DIR})
 
-
-file(GLOB SRC_FILES CONFIGURE_DEPENDS ${PROJECT_SOURCE_DIR}/*.cc)
-
-add_executable(${PROJECT_NAME}
-		${DB_FILES}
-		${SRC_FILES} 
-		${UTILS_FILES}
-		${SCHEMA_FILES}
-		${MIDDLEWARE_FILES}
-		${CONTROLLER_FILES})
-
-
-
-target_link_libraries(${PROJECT_NAME} boost::boost Drogon::Drogon cpp-jwt::cpp-jwt)
+# Link against required libraries (using boost::boost as specified)
+target_link_libraries(${PROJECT_NAME} Drogon::Drogon cpp-jwt::cpp-jwt  SQLite::SQLite3 spdlog::spdlog)

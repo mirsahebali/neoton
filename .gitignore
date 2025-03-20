@@ -1,7 +1,8 @@
-build
-.cache
-uploads
-*.db
+build/
+.cache/
+uploads/
+*-dev.db
+dump.rdb
 # Logs
 web/logs
 web/*.log
@@ -127,3 +128,8 @@ web/android/app/src/main/assets/public
 web/android/app/src/main/assets/capacitor.config.json
 web/android/app/src/main/assets/capacitor.plugins.json
 web/android/app/src/main/res/xml/config.xml
+
+
+# Added by cargo
+
+/target

@@ -1,7 +1,7 @@
 import type { CapacitorConfig } from '@capacitor/cli';
 
 const config: CapacitorConfig = {
-  appId: 'dev.neolink.app',
+  appId: 'io.neolink.app',
   appName: 'neolink',
   webDir: 'dist'
 };
