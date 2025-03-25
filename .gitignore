@@ -1,0 +1,7 @@
+node_modules
+private.key
+drizzle
+.env
+neolink-dev.db
+web/node_modules
+web/dist
