@@ -1,7 +1,6 @@
-import { StatusCodes } from "http-status-codes";
 import { db } from "../../db.js";
 import { usersTable } from "../../db/schema.js";
-import { and, eq } from "drizzle-orm";
+import { eq } from "drizzle-orm";
 import { logger } from "../../logger.js";
 import { generateJWT } from "../../utils.js";
 
