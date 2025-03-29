@@ -4,31 +4,32 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "dev": "vite --host",
-    "build": "vite build ",
-    "preview": "vite preview --host",
-    "lint": "eslint . --ignore-pattern 'coverage/*' --ignore-pattern 'dist/*'",
-    "test": "vitest",
-    "coverage": "vitest --coverage",
-    "open:android": "vite build && cap sync && cap open android",
-    "android": "vite build && cap sync && cap run android",
-    "sync": "vite build && cap sync"
+    "dev": "vite",
+    "build": "tsc -b && vite build",
+    "build:watch": "vite build --watch ",
+    "preview": "vite preview"
   },
   "dependencies": {
-    "@capacitor/android": "^7.0.1",
-    "@capacitor/cli": "^7.0.1",
-    "@capacitor/core": "^7.0.1",
-    "@capacitor/ios": "^7.0.1",
+    "@lutaok/solid-modal": "^0.1.1",
     "@solidjs/router": "^0.15.3",
-    "@tailwindcss/vite": "^4.0.12",
+    "@tailwindcss/vite": "^4.0.15",
+    "socket.io": "^4.8.1",
+    "socket.io-client": "^4.8.1",
+    "solid-icons": "^1.1.0",
     "solid-js": "^1.9.5",
-    "tailwindcss": "^4.0.12",
+    "solid-toast": "^0.5.0",
+    "tailwindcss": "^4.0.15",
     "theme-change": "^2.5.0"
   },
   "devDependencies": {
-    "daisyui": "^5.0.0",
+    "daisyui": "^5.0.9",
     "typescript": "~5.7.2",
     "vite": "^6.2.0",
     "vite-plugin-solid": "^2.11.2"
+  },
+  "pnpm": {
+    "onlyBuiltDependencies": [
+      "esbuild"
+    ]
   }
 }
