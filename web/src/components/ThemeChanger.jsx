@@ -15,12 +15,6 @@ export default function ThemeChanger() {
         <li data-set-theme="dark" data-act-class="btn-active">
           <button>Dark </button>
         </li>
-        <li data-set-theme="sunset" data-act-class="btn-active">
-          <button>Sunset </button>
-        </li>
-        <li data-set-theme="caramellatte" data-act-class="btn-active">
-          <button>Caramellatte </button>
-        </li>
         <li data-set-theme="night" data-act-class="btn-active">
           <button>Night </button>
         </li>

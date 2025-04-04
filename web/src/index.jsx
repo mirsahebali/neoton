@@ -16,6 +16,7 @@ import Contacts from "./pages/Contacts.jsx";
 import ChatsLayout from "./components/ChatsLayout.jsx";
 import Calls from "./pages/Calls.jsx";
 import Settings from "./pages/Settings.jsx";
+import Messaging from "./pages/Messaging.jsx";
 
 const root = document.getElementById("root");
 
@@ -43,6 +44,8 @@ render(
           }}
         />
         <Route path="/chats" component={Chats} />
+        <Route path="/chats/:username" component={Messaging} />
+
         <Route path="/contacts" component={Contacts} />
         <Route path="/calls" component={Calls} />
         <Route path="/settings" component={Settings} />

@@ -2,6 +2,7 @@ import bcrypt from "bcrypt";
 import { JWT_PRIVATE_KEY, JWT_PUBLIC_KEY, SALT_ROUNDS } from "./consts.js";
 import { usersTable } from "./db/schema.js";
 import jwt from "jsonwebtoken";
+import { logger } from "./logger.js";
 
 /**
  * @typedef {typeof usersTable.$inferInsert & { iat: number, exp: number}} UserClaims
@@ -46,6 +47,7 @@ export async function comparePasword(password, hashedPassword) {
 export function timeNow() {
   return Math.floor(new Date().getTime() / 1000);
 }
+
 /**
  * @param {typeof usersTable.$inferInsert} claims -
  * @returns {Promise<string | undefined>} - signed jwt token
@@ -73,17 +75,17 @@ export async function generateJWT(claims) {
  * @returns {Promise<UserClaims | undefined>}
  */
 export async function decodeJWT(token) {
-  if (!JWT_PUBLIC_KEY) throw new Error("JWT_PRIVATE_KEY no set");
+  if (!JWT_PUBLIC_KEY) throw new Error("JWT_PUBLIC_KEY not set");
 
   let claims;
-  jwt.verify(token, JWT_PUBLIC_KEY),
-    (/** @type {any} */ err, /** @type {UserClaims}*/ decoded) => {
-      if (err) {
-        console.error(err);
-        return;
-      }
-      claims = decoded;
-    };
+  jwt.verify(token, JWT_PUBLIC_KEY, (err, decoded) => {
+    if (err) {
+      logger.error("ERROR decoding token", token);
+      console.error(err);
+      return;
+    }
+    claims = decoded;
+  });
 
   return claims;
 }

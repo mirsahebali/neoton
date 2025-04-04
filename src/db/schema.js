@@ -1,5 +1,11 @@
 import { relations, sql } from "drizzle-orm";
-import { int, integer, sqliteTable, text } from "drizzle-orm/sqlite-core";
+import {
+  int,
+  integer,
+  sqliteTable,
+  text,
+  unique,
+} from "drizzle-orm/sqlite-core";
 
 export const usersTable = sqliteTable("users", {
   id: int().primaryKey({ autoIncrement: true }),
@@ -7,9 +13,26 @@ export const usersTable = sqliteTable("users", {
   email: text().notNull().unique(),
   enabled_2fa: integer({ mode: "boolean" }).default(false),
   hashed_password: text().notNull(),
-  created_at: integer({ mode: "timestamp_ms" }),
+  created_at: integer({ mode: "timestamp_ms" })
+    .notNull()
+    .default(sql`(unixepoch() * 1000)`),
   is_verified: integer({ mode: "boolean" }).default(false),
 });
+
+export const contactsTable = sqliteTable(
+  "contacts",
+  {
+    // recv_contact id
+    sender_id: int().references(() => usersTable.id),
+    recv_id: int().references(() => usersTable.id),
+    request_accepted: integer({ mode: "boolean" }).default(false),
+  },
+  (c) => [unique().on(c.sender_id, c.recv_id)],
+);
+
+export const contactRelations = relations(usersTable, ({ many }) => ({
+  contacts: many(contactsTable),
+}));
 
 export const messageTable = sqliteTable("messages", {
   id: int().primaryKey({ autoIncrement: true }),

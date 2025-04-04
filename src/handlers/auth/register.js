@@ -28,10 +28,11 @@ export async function registerHandler(req, res) {
     return;
   }
 
-  /** @type {string} */
-  let enabled2FA = req.body.enable_2fa || "true";
+  /** @type {string | string[] | undefined} */
+  let enabled2FA = req.body.enable_2fa;
+  console.log("Enabled 2FA: ", enabled2FA);
 
-  let is2FAEnabled = enabled2FA === "true";
+  let is2FAEnabled = enabled2FA?.includes("on") || enabled2FA?.includes("true");
 
   /** @type {string} */
   let password = req.body.password;
@@ -81,15 +82,13 @@ export async function registerHandler(req, res) {
     return;
   }
 
-  if (!createdUser.enabled_2fa) {
+  if (createdUser.enabled_2fa === false) {
     logger.info("access token sent to user");
     res
       .cookie("ACCESS_TOKEN", token, {
         signed: true,
-        httpOnly: true,
-        sameSite: true,
       })
-      .status(401)
+      .status(200)
       .send({ error: false, message: "Redirect to chats", enabled2fa: false });
     return;
   }
@@ -101,6 +100,7 @@ export async function registerHandler(req, res) {
     res.status(500).send({ error: true, message: "error sending email" });
     return;
   }
+  logger.info("Email sent to new user" + createdUser.email);
   res.status(200).send({
     error: false,
     message: "email sent successfully",

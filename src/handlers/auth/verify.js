@@ -14,14 +14,6 @@ import { decodeJWT, timeNow } from "../../utils.js";
 export const checkJWT = async (req, res) => {
   let accessToken = getCookie(req, "ACCESS_TOKEN");
 
-  let email = req.body.email;
-
-  if (!email) {
-    res.status(401).send({ error: true, message: "Unauthenticated user" });
-    logger.error("NO email provided by token user: " + accessToken);
-    return;
-  }
-
   logger.info(req.ip + " accesssing access_token");
   if (!accessToken) {
     res.status(401).send({ error: true, message: "Unauthenticated user" });
@@ -31,14 +23,8 @@ export const checkJWT = async (req, res) => {
   let decodedClaims = await decodeJWT(accessToken);
 
   if (!decodedClaims) {
-    res.status(500).send({ error: true, message: "internal server error" });
+    res.status(401).send({ error: true, message: "Unauthenticated user" });
     logger.error("cannot decode claims");
-    return;
-  }
-
-  if (email !== decodedClaims.email) {
-    res.status(401).send({ error: true, message: "unauthorized access" });
-    logger.error("unauthorized access with a token of user email: " + email);
     return;
   }
 

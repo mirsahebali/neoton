@@ -2,6 +2,7 @@ import { action, useNavigate, useSubmission } from "@solidjs/router";
 import { createEffect, createSignal } from "solid-js";
 import toast from "solid-toast";
 import { sleep, to } from "../utils";
+import { checkSessionRequest } from "../requests";
 
 /**
  * @param {boolean} is2FAEnabled - login form data
@@ -9,7 +10,7 @@ import { sleep, to } from "../utils";
  * @returns {Promise<{status: number, data: any}>} - json response
  */
 const handleFormSumbit = async (is2FAEnabled, formData) => {
-  formData.append("password_enabled", String(is2FAEnabled));
+  formData.append("enable_2fa", String(is2FAEnabled));
   const res = await fetch(to("/api/auth/register"), {
     method: "post",
     body: formData,
@@ -30,13 +31,20 @@ export default function Register() {
       if (register.result) toast.error(register.result.data.message);
       return;
     }
-    if (!enable2FA()) {
-      navigate("/app/chats");
-      return;
+    if (!register.result.data.error) {
+      if (!enable2FA()) {
+        localStorage.setItem(
+          "email",
+          // @ts-ignore
+          register.input[1].get("email").toString(),
+        );
+        navigate("/app/chats");
+        return;
+      }
+      navigate("/auth/verify", {
+        state: { email: register.input[1].get("email") },
+      });
     }
-    navigate("/auth/verify", {
-      state: { email: register.input[1].get("email") },
-    });
   });
 
   return (
@@ -54,7 +62,6 @@ export default function Register() {
               type="checkbox"
               name="enable_2fa"
               checked={enable2FA()}
-              value={String(enable2FA())}
               onchange={() => toggle2FA(!enable2FA())}
               class="checkbox"
             />

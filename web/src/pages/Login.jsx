@@ -1,6 +1,7 @@
 import { action, useNavigate, useSubmission } from "@solidjs/router";
 import { createEffect, createSignal } from "solid-js";
 import toast from "solid-toast";
+import { checkSessionRequest } from "../requests";
 
 /**
  * @param {FormData} formData - login form data
@@ -11,8 +12,9 @@ const handleFormSumbit = async (formData) => {
     body: formData,
   });
 
-  /** @type { {status: number, data: { enabled2fa: boolean, error: boolean, message: string }}} */
+  /** @type { { status: number, data: { enabled2fa: boolean, error: boolean, message: string } } } */
   const data = { status: res.status, data: await res.json() };
+  console.log(data.data);
   return data;
 };
 const loginAction = action(handleFormSumbit, "loginUser");
@@ -23,23 +25,18 @@ export default function Login() {
   const navigate = useNavigate();
 
   createEffect(() => {
-    if (!login.result) {
-      return;
-    }
     if (login.error) {
       toast.error(login.error);
       return;
     }
-
-    // @ts-ignore
-    if (login.result.data.enabled2fa === true) {
-      navigate("/auth/verify", { state: { email: email() } });
-      return;
-
-      // @ts-ignore
-    } else if (login.result.data.enabled2fa === false) {
-      navigate("/chats");
-      return;
+    if (login.result) {
+      if (login.result.data.enabled2fa === true) {
+        navigate("/auth/verify", { state: { email: email() } });
+        return;
+      } else {
+        navigate("/app/chats", { state: { email: email() } });
+        return;
+      }
     }
   });
 

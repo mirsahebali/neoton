@@ -13,6 +13,12 @@ import { otpMap } from "../../server.js";
  * @returns {Promise<void>}
  */
 export async function loginHandler(req, res) {
+  const existingToken = req.signedCookies["ACCESS_TOKEN"];
+  if (existingToken) {
+    res.redirect("/app/chats");
+    return;
+  }
+
   /** @type {string | undefined} */
   let email = req.body.email;
   if (!email) {
@@ -53,14 +59,6 @@ export async function loginHandler(req, res) {
     return;
   }
 
-  const token = await generateJWT(user);
-
-  if (!token) {
-    logger.error("cannot generate token");
-    res.status(500).send({ error: true, message: "Internal server error" });
-    return;
-  }
-
   if (user.enabled_2fa) {
     let otp = new OTP();
     otpMap[email] = otp;
@@ -81,13 +79,19 @@ export async function loginHandler(req, res) {
     return;
   }
 
+  const token = await generateJWT(user);
+
+  if (!token) {
+    logger.error("cannot generate token");
+    res.status(500).send({ error: true, message: "Internal server error" });
+    return;
+  }
+
   logger.info("User is authenticated");
   res
     .status(200)
     .cookie("ACCESS_TOKEN", token, {
       signed: true,
-      sameSite: true,
-      httpOnly: true,
     })
     .send({
       error: false,
