@@ -1,6 +1,6 @@
 import { and, eq, ne, or } from "drizzle-orm";
 import { db } from "../../db.js";
-import { contactsTable, usersTable } from "../../db/schema.js";
+import { contactsTable, messageTable, usersTable } from "../../db/schema.js";
 import { logger } from "../../logger.js";
 
 /**
@@ -224,4 +224,34 @@ export async function getRequests(req, res) {
 export async function getMessagesOfContact(req, res) {
   const id = res.locals.id;
   const username = req.params.username;
+  const [reciever] = await db
+    .select({ id: usersTable.id })
+    .from(usersTable)
+    .where(eq(usersTable.username, username));
+
+  let messages;
+  try {
+    messages = await db
+      .select()
+      .from(messageTable)
+      .where(
+        or(
+          and(
+            eq(messageTable.sent_by, id),
+            eq(messageTable.recv_by, reciever.id),
+          ),
+          and(
+            eq(messageTable.recv_by, id),
+            eq(messageTable.sent_by, reciever.id),
+          ),
+        ),
+      )
+      .all();
+  } catch (error) {
+    console.error(error);
+    logger.error("ERROR: getting messages table");
+    res.status(500).send({ error: true, message: "ERROR: getting messages" });
+    return;
+  }
+  res.status(200).send(messages);
 }

@@ -1,7 +1,6 @@
 import { action, useNavigate, useSubmission } from "@solidjs/router";
 import { createEffect, createSignal } from "solid-js";
 import toast from "solid-toast";
-import { checkSessionRequest } from "../requests";
 
 /**
  * @param {FormData} formData - login form data

@@ -141,7 +141,7 @@ export const getRequests = async () => {
 
 /**
  * @param {string} username
- * @returns
+ * @returns {Promise<import("./types").Message[] | undefined>}
  */
 export const getMessagesOfContact = async (username) => {
   const res = await fetch(to("/api/db/user/messages/" + username), {

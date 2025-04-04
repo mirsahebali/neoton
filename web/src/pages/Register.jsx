@@ -1,8 +1,7 @@
 import { action, useNavigate, useSubmission } from "@solidjs/router";
 import { createEffect, createSignal } from "solid-js";
 import toast from "solid-toast";
-import { sleep, to } from "../utils";
-import { checkSessionRequest } from "../requests";
+import { to } from "../utils";
 
 /**
  * @param {boolean} is2FAEnabled - login form data

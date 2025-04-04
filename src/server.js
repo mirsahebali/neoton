@@ -22,7 +22,7 @@ import {
   getUser,
 } from "./handlers/db/users.js";
 import { db } from "./db.js";
-import { contactsTable, usersTable } from "./db/schema.js";
+import { contactsTable, messageTable, usersTable } from "./db/schema.js";
 import { and, eq } from "drizzle-orm";
 import { rateLimit } from "express-rate-limit";
 
@@ -93,6 +93,45 @@ app.get("/*", (req, res) => {
 });
 
 io.on("connection", (socket) => {
+  socket.on(
+    "send-message",
+    async ([senderUsername, recieverUsername, content]) => {
+      const [sender] = await db
+        .select({ id: usersTable.id })
+        .from(usersTable)
+        .where(eq(usersTable.username, senderUsername))
+        .all();
+      const [reciever] = await db
+        .select({ id: usersTable.id })
+        .from(usersTable)
+        .where(eq(usersTable.username, recieverUsername))
+        .all();
+
+      let sentAt = new Date();
+      try {
+        await db.insert(messageTable).values({
+          content,
+          sent_at: sentAt,
+          sent_by: sender.id,
+          recv_by: reciever.id,
+        });
+      } catch (err) {
+        console.error(err);
+        logger.error("ERROR: sending message to reciever ", recieverUsername);
+        logger.error(err);
+        return;
+      }
+      const recieveMessageEvent = `recieve-message:${recieverUsername}`;
+      logger.info("Emitted recieve message event: " + recieveMessageEvent);
+      socket.broadcast.emit(recieveMessageEvent, [
+        senderUsername,
+        content,
+        sender.id,
+        sentAt,
+      ]);
+    },
+  );
+
   socket.on("accept-invite", async ([currentUsername, senderUsername]) => {
     // error event name to send to the occoured user
     const errorEventName = `error:${currentUsername}`.trim();

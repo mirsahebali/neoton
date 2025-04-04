@@ -1,5 +1,7 @@
 node_modules
 private.key
+private_key.pem
+public_key.pem
 drizzle
 .env
 neolink-dev.db

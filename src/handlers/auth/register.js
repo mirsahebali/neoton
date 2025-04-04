@@ -21,6 +21,8 @@ export async function registerHandler(req, res) {
     return;
   }
 
+  email = email.toLowerCase();
+
   /** @type {string} */
   let username = req.body.username;
   if (!username) {

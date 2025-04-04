@@ -26,6 +26,7 @@ export async function loginHandler(req, res) {
     res.status(401).send({ error: true });
     return;
   }
+  email = email.toLowerCase();
 
   /** @type {string} */
   let password = req.body.password;
@@ -55,7 +56,7 @@ export async function loginHandler(req, res) {
 
   if (!isValid) {
     logger.warn("Unauthenticated access to user", user.email);
-    res.status(401).send({ error: true, message: "Invalid user" });
+    res.status(401).send({ error: true, message: "Invalid Credentials" });
     return;
   }
 
