@@ -4,12 +4,13 @@ import toast from "solid-toast";
 import { to } from "../utils";
 
 /**
- * @param {boolean} is2FAEnabled - login form data
- * @param {FormData} formData - login form data
+ * @param {boolean} is2FAEnabled
+ * @param {FormData} formData - register form data
  * @returns {Promise<{status: number, data: any}>} - json response
  */
 const handleFormSumbit = async (is2FAEnabled, formData) => {
   formData.append("enable_2fa", String(is2FAEnabled));
+
   const res = await fetch(to("/api/auth/register"), {
     method: "post",
     body: formData,
@@ -21,6 +22,7 @@ const registerAction = action(handleFormSumbit, "registerUser");
 
 export default function Register() {
   const [enable2FA, toggle2FA] = createSignal(false);
+  const [passwordVisibility, togglePasswordVisibility] = createSignal(false);
   const register = useSubmission(registerAction);
   const navigate = useNavigate();
 
@@ -61,7 +63,10 @@ export default function Register() {
               type="checkbox"
               name="enable_2fa"
               checked={enable2FA()}
-              onchange={() => toggle2FA(!enable2FA())}
+              onchange={(e) => {
+                toggle2FA(!enable2FA());
+                console.log(e.target.value);
+              }}
               class="checkbox"
             />
             Enable 2FA (recommended) <span>Why? </span>
@@ -116,7 +121,7 @@ export default function Register() {
           <label class="input validator ">
             <KeyIcon />
             <input
-              type="password"
+              type={passwordVisibility() ? "text" : "password"}
               name="password"
               required={enable2FA()}
               placeholder="Password"
@@ -134,6 +139,18 @@ export default function Register() {
             <br />
             At least one uppercase letter
           </p>
+        </div>
+
+        <div class="flex items-center justify-center gap-2">
+          <input
+            type="checkbox"
+            name="visbility"
+            onchange={() => {
+              togglePasswordVisibility(!passwordVisibility());
+            }}
+            class="checkbox"
+          />
+          <label for="visibility">Show password</label>
         </div>
 
         <button class="btn btn-info" disabled={register.pending}>

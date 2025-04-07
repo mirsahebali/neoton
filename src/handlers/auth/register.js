@@ -2,7 +2,6 @@ import { db } from "../../db.js";
 import { usersTable } from "../../db/schema.js";
 import { generateJWT, hashPassword } from "../../utils.js";
 import { logger } from "../../logger.js";
-import { IS_DEV_ENV } from "../../consts.js";
 import { sendEmail } from "./email.js";
 import { OTP } from "../../otp.js";
 import { otpMap } from "../../server.js";
@@ -89,6 +88,7 @@ export async function registerHandler(req, res) {
     res
       .cookie("ACCESS_TOKEN", token, {
         signed: true,
+        secure: process.env.PROD === "true",
       })
       .status(200)
       .send({ error: false, message: "Redirect to chats", enabled2fa: false });
@@ -96,7 +96,8 @@ export async function registerHandler(req, res) {
   }
 
   const otp = new OTP();
-  otpMap[email] = otp;
+  otpMap.set(email, otp);
+  logger.info("Created token for " + email + " otp: " + otp.token);
   let isSuccess = sendEmail(createdUser.email, otp);
   if (!isSuccess) {
     res.status(500).send({ error: true, message: "error sending email" });

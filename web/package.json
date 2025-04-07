@@ -14,6 +14,7 @@
     "@solid-primitives/scroll": "^2.1.0",
     "@solidjs/router": "^0.15.3",
     "@tailwindcss/vite": "^4.0.15",
+    "emoji-picker-element": "^1.26.1",
     "lodash": "^4.17.21",
     "socket.io": "^4.8.1",
     "socket.io-client": "^4.8.1",

@@ -45,3 +45,7 @@ export async function refetchSetUserStore(
     setCurrentUser("requests", requests);
   }
 }
+
+export function isMobile() {
+  return window.innerWidth < 420;
+}

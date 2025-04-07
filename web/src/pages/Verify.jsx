@@ -6,7 +6,7 @@ import {
 } from "@solidjs/router";
 import { createEffect, createSignal } from "solid-js";
 import toast from "solid-toast";
-import { to } from "../utils";
+import { sleep, to } from "../utils";
 import { FaSolidKey } from "solid-icons/fa";
 
 /**
@@ -32,7 +32,6 @@ export default function VerifyUser() {
   const verifyUser = useSubmission(verifyOTPAction);
 
   let [email, setEmail] = createSignal("");
-  let [loadingToastId, setLoadingToastId] = createSignal("");
 
   createEffect(() => {
     if (!location.state || !location.state.email) {
@@ -41,24 +40,24 @@ export default function VerifyUser() {
       return;
     }
 
+    console.log(email());
     setEmail(location.state.email);
   });
 
-  createEffect(() => {
-    if (!verifyUser.result) {
-      return;
-    }
-    if (verifyUser.pending) {
-      setLoadingToastId(toast.loading("Verifying user"));
-      return;
-    }
+  createEffect(async () => {
     if (verifyUser.error) {
       toast.error(verifyUser.error);
       return;
     }
 
-    toast.dismiss(loadingToastId());
+    if (verifyUser.result.error === true) {
+      toast.error(verifyUser.result.message);
+      return;
+    }
+
+    toast.loading("Redirecting withinin 3 seconds...", { duration: 3000 });
     toast.success("User verified successfully");
+    await sleep(3000);
     let email = /** @type {string} */ (location.state?.email);
     localStorage.setItem("email", email);
     navigate("/app/chats");

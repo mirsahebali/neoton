@@ -1,6 +1,5 @@
 import { Context } from "solid-js";
 import type { SetStoreFunction } from "solid-js/store";
-
 export interface UserInfo {
   email: string;
   username: string;
@@ -27,6 +26,13 @@ export interface UserStoreInfo extends UserInfo {
   numberOfRequests: number;
   numberOfInvites: number;
   displayFooter: boolean;
+}
+
+export interface Chat {
+  id: number;
+  email: string;
+  username: string;
+  lastMessage: string;
 }
 
 export interface ContactMessages {

@@ -165,3 +165,29 @@ export const getMessagesOfContact = async (username) => {
   }
   return contactMessages;
 };
+
+/**
+ * @returns {Promise<import("./types").Chat[] | undefined>}
+ * */
+export const getChats = async () => {
+  const res = await fetch(to("/api/db/user/chats"), {
+    method: "get",
+  });
+
+  if (!res.ok) {
+    console.error("ERROR: status -> ", res.statusText);
+    console.error("ERROR: status text-> ", res.status);
+    throw new Error("Error getting contact messages");
+  }
+
+  let chatMessages;
+  try {
+    chatMessages = await res.json();
+  } catch (error) {
+    console.error(error);
+    // @ts-ignore
+    toast.error(error.toString());
+    return;
+  }
+  return chatMessages;
+};

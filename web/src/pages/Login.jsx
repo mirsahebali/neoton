@@ -21,6 +21,7 @@ const loginAction = action(handleFormSumbit, "loginUser");
 export default function Login() {
   const login = useSubmission(loginAction);
   const [email, setEmail] = createSignal("");
+  const [passwordVisibility, togglePasswordVisibility] = createSignal(false);
   const navigate = useNavigate();
 
   createEffect(() => {
@@ -65,7 +66,7 @@ export default function Login() {
           <label class="input validator ">
             <KeyIcon />
             <input
-              type="password"
+              type={passwordVisibility() ? "text" : "password"}
               name="password"
               placeholder="Password"
               minlength="8"
@@ -73,6 +74,7 @@ export default function Login() {
               title="Must be more than 8 characters, including number, lowercase letter, uppercase letter"
             />
           </label>
+
           <p class="validator-hint hidden">
             Must be more than 8 characters, including
             <br />
@@ -82,6 +84,18 @@ export default function Login() {
             <br />
             At least one uppercase letter
           </p>
+        </div>
+
+        <div class="flex items-center justify-center gap-2">
+          <input
+            type="checkbox"
+            name="visbility"
+            onchange={() => {
+              togglePasswordVisibility(!passwordVisibility());
+            }}
+            class="checkbox"
+          />
+          <label for="visibility">Show password</label>
         </div>
 
         <button

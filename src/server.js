@@ -17,6 +17,7 @@ import cors from "cors";
 import {
   getContacts,
   getInvites,
+  getLastMessageOfContactsWithContacts,
   getMessagesOfContact,
   getRequests,
   getUser,
@@ -34,8 +35,8 @@ const io = new Server(httpServer, { allowUpgrades: true });
 
 const PORT = 8080;
 
-/** @type {Record<string, OTP>} */
-export const otpMap = {};
+/** @type {Map<string, OTP>} */
+export const otpMap = new Map();
 
 app.use(express.json());
 app.use(bodyParser.urlencoded({ extended: true }));
@@ -47,6 +48,9 @@ const limiter = rateLimit({
   windowMs: 15 * 60 * 100,
   limit: 300,
   message: { error: "Too many requests, please try again later" },
+  validate: {
+    trustProxy: true,
+  },
 });
 app.use(limiter);
 
@@ -71,6 +75,11 @@ dbRouter.get("/user", ensureAuthenticated, getUser);
 dbRouter.get("/user/contacts", ensureAuthenticated, getContacts);
 dbRouter.get("/user/requests", ensureAuthenticated, getRequests);
 dbRouter.get("/user/invites", ensureAuthenticated, getInvites);
+dbRouter.get(
+  "/user/chats",
+  ensureAuthenticated,
+  getLastMessageOfContactsWithContacts,
+);
 dbRouter.get(
   "/user/messages/:username",
   ensureAuthenticated,

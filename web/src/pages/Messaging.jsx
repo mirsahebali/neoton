@@ -4,6 +4,7 @@ import { createEffect, createResource, createSignal, For } from "solid-js";
 import { socket } from "../socket";
 import { useGetUser } from "../contexts";
 import { getMessagesOfContact } from "../requests";
+import "emoji-picker-element";
 
 import toast from "solid-toast";
 import _ from "lodash";
@@ -28,6 +29,7 @@ export default function Messaging() {
     setMessages(messagesData() || []);
   });
 
+  // socket.io event listener to get messages
   createEffect(() => {
     const recieveEventName = `recieve-message:${currentUser.username}`;
     console.log("Event name", recieveEventName);
@@ -63,6 +65,7 @@ export default function Messaging() {
       message(),
     ]);
     await refetchMessages();
+    setMessage("");
   }
 
   const [container, setContainer] = createSignal();
@@ -79,7 +82,10 @@ export default function Messaging() {
         @{params.username}
       </h1>
       <div class="w-full">
-        <div ref={setContainer} class="overflow-y-scroll h-[80vh] my-10 w-full">
+        <div
+          ref={setContainer}
+          class="overflow-y-scroll h-[80vh] my-10 py-5 lg:mx-32 lg:bg-neutral"
+        >
           <For each={messages() || []}>
             {(msg) => (
               <div
@@ -96,10 +102,31 @@ export default function Messaging() {
         </div>
       </div>
       <div class="fixed bottom-0 left-0 w-full">
-        <div class="flex justify-center items-center gap-2 mb-2">
+        <div class="flex justify-center items-center gap-2 mb-2 px-2">
+          <div class="dropdown dropdown-top">
+            <div tabindex="0" role="button" class="btn ">
+              😄
+            </div>
+            <div
+              tabindex="0"
+              class="dropdown-content menu bg-base-100 rounded-box z-1 w-52 p-2 shadow-sm"
+            >
+              {/* @ts-ignore */}
+              <emoji-picker
+                ref={(/** @type {HTMLElement}*/ e) =>
+                  e.addEventListener("emoji-click", (e) =>
+                    setMessage((message) => message + e.detail.unicode),
+                  )
+                }
+              >
+                {/* @ts-ignore */}
+              </emoji-picker>
+            </div>
+          </div>
           <input
             type="text"
             name="message"
+            placeholder="Message"
             value={message()}
             onchange={(e) => {
               setMessage(e.target.value);

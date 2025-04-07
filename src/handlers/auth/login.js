@@ -39,12 +39,19 @@ export async function loginHandler(req, res) {
   /** @type {(typeof usersTable.$inferSelect) | undefined} */
   let user;
   try {
-    const [userDb] = await db
+    const users = await db
       .select()
       .from(usersTable)
-      .where(eq(usersTable.email, email));
+      .where(eq(usersTable.email, email))
+      .all();
 
-    user = userDb;
+    if (users.length === 0) {
+      logger.error(`ERROR: querying user with email: ${email}`);
+      res.status(404).send({ error: true, message: "User not found" });
+      return;
+    }
+
+    user = users[0];
     logger.info(`found user ${email}`);
   } catch (/** @type {any}*/ e) {
     logger.error(`ERROR: querying user with email: ${email}`, e);
@@ -62,7 +69,7 @@ export async function loginHandler(req, res) {
 
   if (user.enabled_2fa) {
     let otp = new OTP();
-    otpMap[email] = otp;
+    otpMap.set(email, otp);
     let isSuccess = await sendEmail(email, otp);
 
     if (!isSuccess) {
@@ -93,6 +100,7 @@ export async function loginHandler(req, res) {
     .status(200)
     .cookie("ACCESS_TOKEN", token, {
       signed: true,
+      secure: process.env.PROD === "true",
     })
     .send({
       error: false,

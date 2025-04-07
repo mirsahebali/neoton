@@ -255,3 +255,72 @@ export async function getMessagesOfContact(req, res) {
   }
   res.status(200).send(messages);
 }
+
+/**
+ * @param {import("express").Request} req -
+ * @param {import("express").Response} res -
+ */
+export async function getLastMessageOfContactsWithContacts(req, res) {
+  /** @type {string} */
+  const email = res.locals.email;
+  /** @type {number} */
+  const id = res.locals.id;
+
+  if (!email) {
+    logger.error("email not found in locals");
+    res.status(401).send({ error: true, message: "unauthorized access" });
+    return;
+  }
+
+  if (!id) {
+    logger.error("id not found in locals");
+    res.status(401).send({ error: true, message: "unauthorized access" });
+    return;
+  }
+
+  let userContacts;
+  try {
+    console.log("ID ", id);
+    let ct = await db
+      .selectDistinct({
+        id: usersTable.id,
+        email: usersTable.email,
+        username: usersTable.username,
+        lastMessage: messageTable.content,
+      })
+      .from(contactsTable)
+      .innerJoin(
+        usersTable,
+        or(
+          eq(usersTable.id, contactsTable.recv_id),
+          eq(usersTable.id, contactsTable.sender_id),
+        ),
+      )
+      .innerJoin(
+        messageTable,
+        or(
+          eq(messageTable.recv_by, contactsTable.recv_id),
+          eq(messageTable.sent_by, contactsTable.recv_id),
+        ),
+      )
+      .where(
+        and(
+          eq(contactsTable.request_accepted, true),
+          or(eq(contactsTable.recv_id, id), eq(contactsTable.sender_id, id)),
+        ),
+      )
+      .orderBy(messageTable.sent_at)
+      .all();
+    userContacts = ct;
+  } catch (error) {
+    // @ts-ignore
+    if (error.code === "SQLITE_NOTFOUND") {
+      logger.error("email not found in locals");
+      res.status(404).send({ error: true, message: "user not found" });
+      return;
+    }
+  }
+  console.log(userContacts);
+
+  res.status(200).send(userContacts);
+}

@@ -1,5 +1,4 @@
 import { logger } from "./logger.js";
-import { getCookie } from "./session.js";
 import { decodeJWT } from "./utils.js";
 
 /**

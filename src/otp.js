@@ -12,10 +12,11 @@ export class OTP {
 
   constructor() {
     this.createdAt = timeNow();
+
     this.token = randomInt(999999);
   }
   isExpired() {
-    return this.createdAt + EXP_TIME >= timeNow();
+    return timeNow() >= this.createdAt + EXP_TIME;
   }
 
   /**

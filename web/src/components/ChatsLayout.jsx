@@ -126,6 +126,7 @@ export default function ChatsLayout(props) {
     const pathRegex = /^\/app\/(chats|contacts|calls|settings)$/;
 
     setCurrentUser("displayFooter", pathRegex.test(currentPath()));
+
     console.log("Pathname", currentPath());
   });
 

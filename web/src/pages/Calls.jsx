@@ -1,3 +1,9 @@
+import WebRTCSetup from "../components/WebRTC";
+
 export default function Calls() {
-  return <div>Calls</div>;
+  return (
+    <div>
+      <WebRTCSetup />
+    </div>
+  );
 }
