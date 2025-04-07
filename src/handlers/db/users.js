@@ -1,4 +1,4 @@
-import { and, eq, ne, or } from "drizzle-orm";
+import { and, eq, or } from "drizzle-orm";
 import { db } from "../../db.js";
 import { contactsTable, messageTable, usersTable } from "../../db/schema.js";
 import { logger } from "../../logger.js";

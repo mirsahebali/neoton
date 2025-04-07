@@ -4,6 +4,7 @@ import { createEffect, createSignal } from "solid-js";
 import { useGetUser } from "../contexts";
 import _ from "lodash";
 import toast from "solid-toast";
+import { AiOutlineUserAdd } from "solid-icons/ai";
 
 export default function InviteUser() {
   const [username, setUsername] = createSignal("");
@@ -30,8 +31,12 @@ export default function InviteUser() {
   }
   return (
     <div>
-      <label for="invite_user_modal" class="btn btn-accent">
+      <label
+        for="invite_user_modal"
+        class="btn text-xl btn-accent w-fit flex mt-5 items-center justify-center gap-3"
+      >
         Invite Contact
+        <AiOutlineUserAdd />
       </label>
 
       <input type="checkbox" id="invite_user_modal" class="modal-toggle" />

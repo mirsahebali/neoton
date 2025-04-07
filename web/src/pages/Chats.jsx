@@ -1,6 +1,6 @@
 import { createEffect, createResource, For, Suspense } from "solid-js";
 import InviteUser from "../components/InviteUser";
-import { getChats, getContacts } from "../requests";
+import { getChats  } from "../requests";
 import _ from "lodash";
 import { useGetUser } from "../contexts";
 
@@ -27,16 +27,15 @@ export default function Chats() {
             >
               <div>
                 <div class="text-lg font-semibold">{contact.username}</div>
-                <div class="text-xs  font-semibold opacity-60">
-                  {contact.lastMessage}
-                </div>
               </div>
             </a>
           )}
         </For>
       </ul>
 
-      <InviteUser />
+      <div class="flex justify-center items-center">
+        <InviteUser />
+      </div>
     </Suspense>
   );
 }
