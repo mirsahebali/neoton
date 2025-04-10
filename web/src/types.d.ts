@@ -69,8 +69,6 @@ export type RefetchRequests = (
 
 export type SetCurrentUserFunction = SetStoreFunction<UserStoreInfo>;
 
-export type UserContext = Context<CurrentUserStore | undefined>;
-
 export interface Contact {
   sender_id: string;
   recv_id: string;
