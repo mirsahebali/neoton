@@ -59,7 +59,7 @@ pub async fn login_handler(
                         ));
                     }
 
-                    if !user.enabled_2fa.unwrap_or(false) {
+                    if !user.enabled_2fa {
                         // empty token may indicate some kind of error
                         let token = encode_jwt(UserClaims::new(&user));
 

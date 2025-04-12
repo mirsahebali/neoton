@@ -31,9 +31,16 @@ diesel::table! {
         #[max_length = 70]
         email -> Varchar,
         hashed_password -> Text,
-        is_verified -> Nullable<Bool>,
-        enabled_2fa -> Nullable<Bool>,
+        is_verified -> Bool,
+        enabled_2fa -> Bool,
         created_at -> Timestamptz,
+    }
+}
+
+diesel::table! {
+    users_contacts (sender_id, recv_id) {
+        sender_id -> Int4,
+        recv_id -> Int4,
     }
 }
 
@@ -41,4 +48,5 @@ diesel::allow_tables_to_appear_in_same_query!(
     contacts,
     messages,
     users,
+    users_contacts,
 );

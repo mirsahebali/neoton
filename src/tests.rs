@@ -1,4 +1,4 @@
-use crate::{routes::email::send_email_handler, utils::verify_password};
+use crate::{get_connection_pool, routes::email::send_email_handler, utils::verify_password};
 
 #[test]
 fn test_hash_password() {
@@ -19,4 +19,10 @@ async fn test_email_sending() {
         .await
         .is_ok()
     )
+}
+
+#[test]
+fn db_join() {
+    let conn = get_connection_pool();
+    let conn = conn.get().unwrap();
 }

@@ -1,5 +1,5 @@
 use axum::{
-    Json, debug_middleware,
+    Extension, Json, debug_middleware,
     extract::{Request, State},
     http::StatusCode,
     middleware::Next,
@@ -8,8 +8,17 @@ use axum::{
 use axum_extra::extract::{PrivateCookieJar, cookie::Cookie};
 
 use diesel::{prelude::*, result::Error};
+use serde::Deserialize;
+use serde::Serialize;
 
 use crate::{AppState, jwt::decode_jwt, models::User, routes::ReturningResponse, schema::users};
+
+#[derive(Serialize, Deserialize, Debug, Clone)]
+pub struct CurrentUserLocal {
+    pub email: String,
+    pub id: i32,
+    pub username: String,
+}
 
 #[debug_middleware]
 pub async fn ensure_authenticated(
@@ -17,7 +26,10 @@ pub async fn ensure_authenticated(
     State(app_state): State<AppState>,
     req: Request,
     next: Next,
-) -> Result<Response, (StatusCode, PrivateCookieJar, Json<ReturningResponse>)> {
+) -> Result<
+    (Extension<CurrentUserLocal>, Response),
+    (StatusCode, PrivateCookieJar, Json<ReturningResponse>),
+> {
     let token = jar.get("ACCESS_TOKEN");
 
     let removed_access_token_jar = jar.remove(Cookie::from("ACCESS_TOKEN"));
@@ -53,20 +65,34 @@ pub async fn ensure_authenticated(
                                 .select(User::as_select())
                                 .limit(1)
                                 .get_result(conn);
-                            if let Err(err) = user {
-                                tracing::error!("getting user from the database");
-                                tracing::error!("{err}");
-                                return Err((
-                                    StatusCode::NOT_FOUND,
-                                    removed_access_token_jar,
-                                    Json(ReturningResponse {
-                                        enabled_2fa: false,
-                                        error: true,
-                                        message: "User not found".into(),
-                                        status: StatusCode::NOT_FOUND.as_u16(),
-                                        user_data: None,
-                                    }),
-                                ));
+                            match user {
+                                Ok(user) => {
+                                    tracing::info!("Authorized user to next middleware from auth");
+
+                                    Ok((
+                                        Extension(CurrentUserLocal {
+                                            username: user.username,
+                                            email: user.email,
+                                            id: user.id,
+                                        }),
+                                        next.run(req).await,
+                                    ))
+                                }
+                                Err(err) => {
+                                    tracing::error!("getting user from the database");
+                                    tracing::error!("{err}");
+                                    return Err((
+                                        StatusCode::NOT_FOUND,
+                                        removed_access_token_jar,
+                                        Json(ReturningResponse {
+                                            enabled_2fa: false,
+                                            error: true,
+                                            message: "User not found".into(),
+                                            status: StatusCode::NOT_FOUND.as_u16(),
+                                            user_data: None,
+                                        }),
+                                    ));
+                                }
                             }
                         }
                         Err(err) => {
@@ -85,10 +111,6 @@ pub async fn ensure_authenticated(
                             ));
                         }
                     }
-
-                    tracing::info!("Authorized user to next middleware from auth");
-
-                    Ok(next.run(req).await)
                 }
                 None => {
                     tracing::error!("ERROR decoding claims");

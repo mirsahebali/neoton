@@ -46,8 +46,8 @@ impl UserClaims {
             username: user.username.clone(),
             email: user.email.clone(),
             hashed_password: user.hashed_password.clone(),
-            enabled_2fa: user.enabled_2fa.unwrap(),
-            is_verified: user.is_verified.unwrap(),
+            enabled_2fa: user.enabled_2fa,
+            is_verified: user.is_verified,
             iat: now_time,
             exp: now_time + EXP_TIME,
         }
