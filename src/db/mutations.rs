@@ -10,6 +10,7 @@ pub async fn create_new_user(
     fullname: String,
     enable_2fa: bool,
 ) -> Result<User, sqlx::Error> {
+    tracing::info!("Active Connections: {}", conn.size());
     sqlx::query_as!(
         User,
         "INSERT INTO users

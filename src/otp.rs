@@ -19,7 +19,7 @@ impl OTP {
         let now_since_epoch = now.duration_since(UNIX_EPOCH).unwrap();
 
         self.created_at.duration_since(UNIX_EPOCH).unwrap() + Duration::from_secs(5 * 60)
-            > now_since_epoch
+            <= now_since_epoch
     }
     pub fn is_matching(&self, token: u16) -> bool {
         self.token == token

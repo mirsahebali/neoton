@@ -21,6 +21,7 @@ use neolink::{
 };
 use serde::Serialize;
 
+use socketioxide::extract::SocketRef;
 use tower_http::{
     cors::CorsLayer,
     services::{ServeDir, ServeFile},
@@ -40,10 +41,15 @@ async fn main() -> anyhow::Result<()> {
 
     dotenvy::dotenv()?;
 
+    let (socket_io_layer, io) = socketioxide::SocketIo::new_layer();
+
     tracing::info!("Starting Main execution");
     let app_state = AppState::new(get_connection_pool().await);
 
     sqlx::migrate!("./migrations").run(&app_state.pool).await?;
+
+    // default namespace
+    io.ns("/", |s: SocketRef| {});
 
     let db_router = Router::new()
         .route("/user", get(get_user))
@@ -72,6 +78,7 @@ async fn main() -> anyhow::Result<()> {
             "http://localhost:5173".parse().unwrap(),
             "https://neolink.saheb.me".parse().unwrap(),
         ]))
+        .layer(socket_io_layer)
         .with_state(app_state.clone());
 
     // run our app with hyper, listening globally on port 8080

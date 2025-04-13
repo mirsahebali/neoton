@@ -32,6 +32,7 @@ pub async fn login_handler(
     (StatusCode, Json<ReturningResponse>),
 > {
     let conn = app_state.pool.clone();
+    tracing::info!("Active Connections: {}", conn.size());
     let user: Result<User, sqlx::Error> = get_one_user_by_email(&conn, input.email).await;
     match user {
         Ok(user) => {

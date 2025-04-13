@@ -55,7 +55,7 @@ pub async fn ensure_authenticated(
                     }
 
                     let conn = app_state.pool.clone();
-                    tracing::info!("Successfully getting connection");
+                    tracing::info!("Active Connections: {}", conn.size());
                     let user = get_one_user_by_email(&conn, user_claim.email).await;
                     match user {
                         Ok(user) => {

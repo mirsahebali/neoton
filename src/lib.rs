@@ -57,7 +57,7 @@ impl AppState {
         AppState(Arc::new(InnerState {
             key: Key::from(COOKIE_KEY_SECRET.as_bytes()),
             pool,
-            otp_map: Arc::new(Mutex::new(HashMap::new())),
+            otp_map: Mutex::new(HashMap::new()),
         }))
     }
 }
@@ -78,7 +78,7 @@ impl FromRef<AppState> for Key {
 pub struct InnerState {
     pub pool: Pool<Postgres>,
     pub key: Key,
-    pub otp_map: Arc<Mutex<HashMap<String, OTP>>>,
+    pub otp_map: Mutex<HashMap<String, OTP>>,
 }
 
 pub async fn get_connection_pool() -> Pool<Postgres> {

@@ -1,6 +1,6 @@
 use sqlx::{Pool, Postgres};
 
-use crate::models::{Message, User};
+use crate::models::User;
 
 pub async fn get_one_user_by_email(
     conn: &Pool<Postgres>,
@@ -16,6 +16,7 @@ pub async fn get_user_invites(
     conn: &Pool<Postgres>,
     user_id: i32,
 ) -> Result<Vec<User>, sqlx::Error> {
+    tracing::info!("Active Connections: {}", conn.size());
     sqlx::query_as(
         r#"
             SELECT (email, username, users.id) 
@@ -34,6 +35,7 @@ pub async fn get_user_requests(
     conn: &Pool<Postgres>,
     user_id: i32,
 ) -> Result<Vec<User>, sqlx::Error> {
+    tracing::info!("Active Connections: {}", conn.size());
     sqlx::query_as(
         r#"
             SELECT (email, username, users.id) 
@@ -52,6 +54,7 @@ pub async fn get_user_contacts(
     conn: &Pool<Postgres>,
     user_id: i32,
 ) -> Result<Vec<User>, sqlx::Error> {
+    tracing::info!("Active Connections: {}", conn.size());
     sqlx::query_as(
         r#"
             SELECT (users.id, email, username) 
@@ -78,6 +81,7 @@ pub async fn get_user_conversations(
     conn: &Pool<Postgres>,
     user_id: i32,
 ) -> Result<Vec<User>, sqlx::Error> {
+    tracing::info!("Active Connections: {}", conn.size());
     sqlx::query_as(
         r#"
             SELECT (messages.content, messages.sent_at, users.username, users.id) 

@@ -52,6 +52,7 @@ pub async fn register_handler(
     (StatusCode, Json<ReturningResponse>),
 > {
     let conn = app_state.pool.clone();
+    tracing::info!("Active Connections: {}", conn.size());
     let result: Result<User, Error> = create_new_user(
         &conn,
         input.email,
