@@ -28,3 +28,12 @@ impl OTP {
         self.is_matching(token) && !self.is_expired()
     }
 }
+
+impl Default for OTP {
+    fn default() -> Self {
+        Self {
+            token: rand::random(),
+            created_at: SystemTime::now(),
+        }
+    }
+}

@@ -1,6 +1,7 @@
 build
 .cache
 uploads
+target
 # web ignore dir
 web/dist
 web/node_modules

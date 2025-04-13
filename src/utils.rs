@@ -22,6 +22,5 @@ pub fn verify_password(password: String, hashed_password: String) -> bool {
 
 pub fn time_now() -> u128 {
     let now_time = SystemTime::now().duration_since(UNIX_EPOCH).unwrap();
-    let now_millis = now_time.as_millis();
-    now_millis
+    now_time.as_millis()
 }

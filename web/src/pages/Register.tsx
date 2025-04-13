@@ -1,7 +1,7 @@
 import { action, useNavigate, useSubmission } from "@solidjs/router";
 import { createEffect, createSignal } from "solid-js";
 import toast from "solid-toast";
-import { to } from "../utils";
+import { sleep, to } from "../utils";
 
 const handleFormSumbit = async (
   is2FAEnabled: boolean,
@@ -26,7 +26,7 @@ export default function Register() {
   const register = useSubmission(registerAction);
   const navigate = useNavigate();
 
-  createEffect(() => {
+  createEffect(async () => {
     if (!register.result) return;
     if (register.result.status !== 200) {
       if (register.result) toast.error(register.result.data.message);
@@ -34,6 +34,9 @@ export default function Register() {
     }
     if (!register.result.data.error) {
       if (!enable2FA()) {
+        toast.success("User created successfully");
+        toast.success("Redirecting in 3 seconds");
+        await sleep(3000);
         localStorage.setItem(
           "email",
           // @ts-ignore

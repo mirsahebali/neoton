@@ -30,13 +30,7 @@ pub struct UserClaims {
     pub exp: u128,
 }
 
-impl UserClaims {
-    pub fn is_expired(&self) -> bool {
-        self.exp >= time_now()
-    }
-}
-
-const EXP_TIME: u128 = 7 * 24 * 60 * 60 * 100;
+const EXP_TIME: u128 = 7 * 24 * 60 * 60 * 100; // 7 days
 
 impl UserClaims {
     pub fn new(user: &User) -> Self {
@@ -51,6 +45,10 @@ impl UserClaims {
             iat: now_time,
             exp: now_time + EXP_TIME,
         }
+    }
+
+    pub fn is_expired(&self) -> bool {
+        self.exp <= time_now()
     }
 }
 

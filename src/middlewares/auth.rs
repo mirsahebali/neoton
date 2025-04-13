@@ -1,5 +1,5 @@
 use axum::{
-    Extension, Json, debug_middleware,
+    Json, debug_middleware,
     extract::{Request, State},
     http::StatusCode,
     middleware::Next,
@@ -7,11 +7,12 @@ use axum::{
 };
 use axum_extra::extract::{PrivateCookieJar, cookie::Cookie};
 
-use diesel::{prelude::*, result::Error};
 use serde::Deserialize;
 use serde::Serialize;
 
-use crate::{AppState, jwt::decode_jwt, models::User, routes::ReturningResponse, schema::users};
+use crate::{
+    AppState, db::queries::get_one_user_by_email, jwt::decode_jwt, routes::ReturningResponse,
+};
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct CurrentUserLocal {
@@ -24,19 +25,16 @@ pub struct CurrentUserLocal {
 pub async fn ensure_authenticated(
     jar: PrivateCookieJar,
     State(app_state): State<AppState>,
-    req: Request,
+    mut req: Request,
     next: Next,
-) -> Result<
-    (Extension<CurrentUserLocal>, Response),
-    (StatusCode, PrivateCookieJar, Json<ReturningResponse>),
-> {
+) -> Result<Response, (StatusCode, PrivateCookieJar, Json<ReturningResponse>)> {
     let token = jar.get("ACCESS_TOKEN");
-
-    let removed_access_token_jar = jar.remove(Cookie::from("ACCESS_TOKEN"));
 
     match token {
         Some(token) => {
-            let claims = decode_jwt(token.to_string());
+            tracing::info!("Cookie path: {:?}", token.path());
+            let claims = decode_jwt(token.value().to_string());
+            let removed_access_token_jar = jar.remove(Cookie::from("ACCESS_TOKEN"));
 
             match claims {
                 Some(user_claim) => {
@@ -56,59 +54,34 @@ pub async fn ensure_authenticated(
                         ));
                     }
 
-                    let mut conn = app_state.pool.get();
-                    match &mut conn {
-                        Ok(conn) => {
-                            tracing::info!("Successfully getting connection");
-                            let user: Result<User, Error> = users::table
-                                .filter(users::email.eq(user_claim.email))
-                                .select(User::as_select())
-                                .limit(1)
-                                .get_result(conn);
-                            match user {
-                                Ok(user) => {
-                                    tracing::info!("Authorized user to next middleware from auth");
+                    let conn = app_state.pool.clone();
+                    tracing::info!("Successfully getting connection");
+                    let user = get_one_user_by_email(&conn, user_claim.email).await;
+                    match user {
+                        Ok(user) => {
+                            tracing::info!("Authorized user to next middleware from auth");
 
-                                    Ok((
-                                        Extension(CurrentUserLocal {
-                                            username: user.username,
-                                            email: user.email,
-                                            id: user.id,
-                                        }),
-                                        next.run(req).await,
-                                    ))
-                                }
-                                Err(err) => {
-                                    tracing::error!("getting user from the database");
-                                    tracing::error!("{err}");
-                                    return Err((
-                                        StatusCode::NOT_FOUND,
-                                        removed_access_token_jar,
-                                        Json(ReturningResponse {
-                                            enabled_2fa: false,
-                                            error: true,
-                                            message: "User not found".into(),
-                                            status: StatusCode::NOT_FOUND.as_u16(),
-                                            user_data: None,
-                                        }),
-                                    ));
-                                }
-                            }
+                            req.extensions_mut().insert(CurrentUserLocal {
+                                username: user.username,
+                                id: user.id,
+                                email: user.email,
+                            });
+                            Ok(next.run(req).await)
                         }
                         Err(err) => {
-                            tracing::error!("getting connection to the database");
+                            tracing::error!("getting user from the database");
                             tracing::error!("{err}");
-                            return Err((
-                                StatusCode::INTERNAL_SERVER_ERROR,
+                            Err((
+                                StatusCode::NOT_FOUND,
                                 removed_access_token_jar,
                                 Json(ReturningResponse {
                                     enabled_2fa: false,
                                     error: true,
-                                    message: "Internal server error".into(),
-                                    status: StatusCode::INTERNAL_SERVER_ERROR.as_u16(),
+                                    message: "User not found".into(),
+                                    status: StatusCode::NOT_FOUND.as_u16(),
                                     user_data: None,
                                 }),
-                            ));
+                            ))
                         }
                     }
                 }
@@ -132,7 +105,7 @@ pub async fn ensure_authenticated(
             tracing::error!("Missing access token");
             Err((
                 StatusCode::UNAUTHORIZED,
-                removed_access_token_jar,
+                jar,
                 Json(ReturningResponse {
                     enabled_2fa: false,
                     error: true,

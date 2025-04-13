@@ -3,17 +3,14 @@
 use std::{
     collections::HashMap,
     ops::Deref,
-    sync::{Arc, LazyLock, Mutex},
+    sync::{Arc, LazyLock},
 };
 
 use axum::extract::FromRef;
 use axum_extra::extract::cookie::Key;
-use diesel::{
-    Connection, PgConnection,
-    r2d2::{ConnectionManager, Pool},
-};
-use dotenvy::dotenv;
 use otp::OTP;
+use sqlx::{Pool, Postgres, postgres::PgPoolOptions};
+use tokio::sync::Mutex;
 
 pub static SALT_ROUNDS: LazyLock<u32> = LazyLock::new(|| {
     std::env::var("SALT_ROUNDS")
@@ -32,8 +29,8 @@ pub static COOKIE_KEY_SECRET: LazyLock<String> =
     LazyLock::new(|| std::env::var("COOKIE_KEY_SECRET").expect("COOKIE_KEY_SECRET is not set"));
 
 // DB modules
+pub mod db;
 pub mod models;
-pub mod schema;
 
 // Web modules
 pub mod routes;
@@ -48,17 +45,19 @@ pub mod middlewares;
 #[cfg(test)]
 pub mod tests;
 
+pub mod sql;
+
 /// Main state is wrapped in another struct to for PrivateCookieJar
 /// [Info](https://docs.rs/axum-extra/latest/axum_extra/extract/cookie/struct.PrivateCookieJar.html)
 #[derive(Clone)]
 pub struct AppState(Arc<InnerState>);
 
 impl AppState {
-    pub fn new() -> Self {
+    pub fn new(pool: Pool<Postgres>) -> Self {
         AppState(Arc::new(InnerState {
             key: Key::from(COOKIE_KEY_SECRET.as_bytes()),
-            pool: Arc::new(get_connection_pool()),
-            otp_map: Mutex::new(HashMap::new()),
+            pool,
+            otp_map: Arc::new(Mutex::new(HashMap::new())),
         }))
     }
 }
@@ -77,24 +76,22 @@ impl FromRef<AppState> for Key {
 }
 
 pub struct InnerState {
-    pub pool: Arc<Pool<ConnectionManager<PgConnection>>>,
+    pub pool: Pool<Postgres>,
     pub key: Key,
-    pub otp_map: Mutex<HashMap<String, OTP>>,
+    pub otp_map: Arc<Mutex<HashMap<String, OTP>>>,
 }
 
-pub fn establish_connection() -> PgConnection {
-    dotenv().ok();
+pub async fn get_connection_pool() -> Pool<Postgres> {
+    let pool = PgPoolOptions::new()
+        .max_connections(100)
+        .connect(&DATABASE_URL)
+        .await;
 
-    PgConnection::establish(&DATABASE_URL)
-        .unwrap_or_else(|_| panic!("ERROR: connecting to {}", *DATABASE_URL))
-}
-
-pub fn get_connection_pool() -> Pool<ConnectionManager<PgConnection>> {
-    let manager = ConnectionManager::<PgConnection>::new(DATABASE_URL.to_string());
-
-    Pool::builder()
-        .test_on_check_out(true)
-        .max_size(20)
-        .build(manager)
-        .expect("Could not build connection pool")
+    match pool {
+        Ok(pool) => pool,
+        Err(err) => {
+            tracing::error!("{err}");
+            panic!("Error getting pool")
+        }
+    }
 }

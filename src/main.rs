@@ -8,7 +8,7 @@ use axum::{
     routing::{delete, get, post},
 };
 use neolink::{
-    AppState,
+    AppState, get_connection_pool,
     middlewares::auth::ensure_authenticated,
     routes::{
         ReturningResponse,
@@ -29,7 +29,7 @@ use tower_http::{
 use tracing_subscriber::{layer::SubscriberExt, registry, util::SubscriberInitExt};
 
 #[tokio::main]
-async fn main() -> std::io::Result<()> {
+async fn main() -> anyhow::Result<()> {
     registry()
         .with(
             tracing_subscriber::EnvFilter::try_from_default_env()
@@ -38,11 +38,17 @@ async fn main() -> std::io::Result<()> {
         .with(tracing_subscriber::fmt::layer())
         .init();
 
-    let app_state = AppState::new();
+    dotenvy::dotenv()?;
+
+    tracing::info!("Starting Main execution");
+    let app_state = AppState::new(get_connection_pool().await);
+
+    sqlx::migrate!("./migrations").run(&app_state.pool).await?;
 
     let db_router = Router::new()
         .route("/user", get(get_user))
         .route("/health", get(async || "Should only get on correct token"))
+        .route("/user/chats", get(get_conversations))
         .route("/user/contacts", get(get_contacts))
         .route("/user/requests", get(get_requests))
         .route("/user/invites", get(get_invites))
@@ -50,12 +56,12 @@ async fn main() -> std::io::Result<()> {
 
     // api router
     let api_router = Router::new()
+        .nest("/db", db_router)
         .route("/health", get(check_health))
         .route("/auth/register", post(register_handler))
         .route("/auth/login", post(login_handler))
         .route("/auth/verify", post(verify_otp))
-        .route("/auth/logout", delete(logout_user))
-        .nest("/db", db_router);
+        .route("/auth/logout", delete(logout_user));
 
     let app = Router::new()
         .nest("/api", api_router)
@@ -66,10 +72,12 @@ async fn main() -> std::io::Result<()> {
             "http://localhost:5173".parse().unwrap(),
             "https://neolink.saheb.me".parse().unwrap(),
         ]))
-        .with_state(app_state);
+        .with_state(app_state.clone());
 
     // run our app with hyper, listening globally on port 8080
+    tracing::info!("Binding to TCP");
     let listener = tokio::net::TcpListener::bind("0.0.0.0:8080").await?;
+    tracing::info!("Booting server");
     axum::serve(listener, app).await?;
     Ok(())
 }

@@ -1,13 +1,12 @@
 use axum::{Form, Json, debug_handler, extract::State, http::StatusCode};
 use axum_extra::extract::{PrivateCookieJar, cookie::Cookie};
-use diesel::{prelude::*, result::Error};
 use serde::Deserialize;
 
 use crate::{
     AppState,
+    db::queries::get_one_user_by_email,
     jwt::{UserClaims, encode_jwt},
     models::User,
-    schema::users,
 };
 
 #[derive(Deserialize, Debug)]
@@ -27,13 +26,7 @@ pub async fn verify_otp(
     (Option<PrivateCookieJar>, Json<ReturningResponse>),
     (StatusCode, Json<ReturningResponse>),
 > {
-    let otp_map = app_state
-        .otp_map
-        .lock()
-        .map_err(|err| {
-            tracing::error!("locking mutex on this thread, {err}");
-        })
-        .unwrap();
+    let otp_map = app_state.otp_map.lock().await;
 
     let curr_token = otp_map.get(&input.email);
 
@@ -52,71 +45,50 @@ pub async fn verify_otp(
                     }),
                 ));
             }
-            let mut conn = app_state.pool.get();
-            match &mut conn {
-                Ok(conn) => {
-                    let user: Result<User, Error> = users::table
-                        .filter(users::email.eq(input.email))
-                        .select(User::as_select())
-                        .limit(1)
-                        .get_result(conn);
+            let conn = app_state.pool.clone();
+            let user: Result<User, sqlx::Error> = get_one_user_by_email(&conn, input.email).await;
 
-                    match user {
-                        Ok(user) => {
-                            let token = encode_jwt(UserClaims::new(&user));
-                            if token.is_empty() {
-                                tracing::error!("encoding jwt: {user:?}");
-                                return Err((
-                                    StatusCode::INTERNAL_SERVER_ERROR,
-                                    Json(ReturningResponse {
-                                        enabled_2fa: false,
-                                        error: true,
-                                        status: StatusCode::INTERNAL_SERVER_ERROR.as_u16(),
-                                        message: "Internal Server Error".into(),
-                                        user_data: None,
-                                    }),
-                                ));
-                            }
-
-                            let updated_jar = jar.add(Cookie::new("ACCESS_TOKEN", token));
-
-                            tracing::info!("successfully verified user and sent token to {user:?}");
-
-                            Ok((
-                                Some(updated_jar),
-                                Json(ReturningResponse {
-                                    enabled_2fa: true,
-                                    error: false,
-                                    status: StatusCode::OK.as_u16(),
-                                    message: "Verified user successfully".into(),
-                                    user_data: Some(user),
-                                }),
-                            ))
-                        }
-                        Err(err) => {
-                            tracing::error!("getting user: {err}");
-                            Err((
-                                StatusCode::NOT_FOUND,
-                                Json(ReturningResponse {
-                                    enabled_2fa: false,
-                                    error: true,
-                                    status: StatusCode::NOT_FOUND.as_u16(),
-                                    message: "Error getting user".into(),
-                                    user_data: None,
-                                }),
-                            ))
-                        }
+            match user {
+                Ok(user) => {
+                    let token = encode_jwt(UserClaims::new(&user));
+                    if token.is_empty() {
+                        tracing::error!("encoding jwt: {user:?}");
+                        return Err((
+                            StatusCode::INTERNAL_SERVER_ERROR,
+                            Json(ReturningResponse {
+                                enabled_2fa: false,
+                                error: true,
+                                status: StatusCode::INTERNAL_SERVER_ERROR.as_u16(),
+                                message: "Internal Server Error".into(),
+                                user_data: None,
+                            }),
+                        ));
                     }
+
+                    let updated_jar = jar.add(Cookie::new("ACCESS_TOKEN", token));
+
+                    tracing::info!("successfully verified user and sent token to {user:?}");
+
+                    Ok((
+                        Some(updated_jar),
+                        Json(ReturningResponse {
+                            enabled_2fa: true,
+                            error: false,
+                            status: StatusCode::OK.as_u16(),
+                            message: "Verified user successfully".into(),
+                            user_data: Some(user),
+                        }),
+                    ))
                 }
                 Err(err) => {
-                    tracing::error!("getting connection from db: {err}");
+                    tracing::error!("getting user: {err}");
                     Err((
-                        StatusCode::INTERNAL_SERVER_ERROR,
+                        StatusCode::NOT_FOUND,
                         Json(ReturningResponse {
                             enabled_2fa: false,
                             error: true,
-                            status: StatusCode::INTERNAL_SERVER_ERROR.as_u16(),
-                            message: "Internal Server Error".into(),
+                            status: StatusCode::NOT_FOUND.as_u16(),
+                            message: "Error getting user".into(),
                             user_data: None,
                         }),
                     ))

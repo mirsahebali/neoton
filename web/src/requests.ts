@@ -73,9 +73,9 @@ export const getContacts = async (): Promise<UserInfo[] | undefined> => {
   let data;
   try {
     data = await res.json();
-  } catch (error) {
+  } catch (error: any) {
+    console.error("ERROR getting contacts");
     console.error(error);
-    // @ts-ignore
     toast.error(error.toString());
     return;
   }
@@ -96,6 +96,7 @@ export const getInvites = async (): Promise<InviteInfo[] | undefined> => {
   try {
     data = await res.json();
   } catch (error) {
+    console.error("ERROR getting invites");
     console.error(error);
     // @ts-ignore
     toast.error(error.toString());
@@ -165,9 +166,9 @@ export const getChats = async (): Promise<Chat[] | undefined> => {
   let chatMessages;
   try {
     chatMessages = await res.json();
-  } catch (error) {
+  } catch (error: any) {
+    console.error("ERROR getting chats");
     console.error(error);
-    // @ts-ignore
     toast.error(error.toString());
     return;
   }
