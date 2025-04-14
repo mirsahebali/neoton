@@ -1,3 +1,5 @@
+use std::sync::Arc;
+
 use axum::{
     Json, debug_middleware,
     extract::{Request, State},
@@ -21,7 +23,7 @@ pub struct CurrentUserLocal {
     pub username: String,
 }
 
-#[debug_middleware]
+#[debug_middleware(state = AppState)]
 pub async fn ensure_authenticated(
     jar: PrivateCookieJar,
     State(app_state): State<AppState>,

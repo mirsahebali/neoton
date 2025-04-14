@@ -27,10 +27,6 @@ pub async fn verify_otp(
     (StatusCode, Json<ReturningResponse>),
 > {
     let otp_map = app_state.otp_map.lock().await;
-    dbg!(otp_map.iter().map(|(val, key)| {
-        dbg!(val);
-        dbg!(key);
-    }));
 
     let curr_token = otp_map.get(&input.email);
 

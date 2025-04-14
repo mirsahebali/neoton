@@ -25,7 +25,9 @@
     "theme-change": "^2.5.0"
   },
   "devDependencies": {
+    "@playwright/test": "^1.51.1",
     "@types/lodash": "^4.17.16",
+    "@types/node": "^22.14.1",
     "daisyui": "^5.0.9",
     "jsdom": "^26.0.0",
     "typescript": "~5.7.2",

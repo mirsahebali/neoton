@@ -1,5 +1,5 @@
 import { BiRegularUserPin } from "solid-icons/bi";
-import { socket } from "../socket";
+import { invitationSocket } from "../socket";
 import { createEffect, createSignal } from "solid-js";
 import { useGetUser } from "../contexts";
 import _ from "lodash";
@@ -21,7 +21,8 @@ export default function InviteUser() {
       toast.error("cannot invite self");
       return;
     }
-    socket.emit("invite user", [currentUser.username, username()]);
+
+    invitationSocket.emit("user:invite", [currentUser.username, username()]);
     let newRequests = await refetchRequests();
     if (!newRequests) return;
     setCurrentUser("requests", newRequests);

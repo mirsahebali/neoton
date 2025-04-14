@@ -35,6 +35,7 @@ pub mod models;
 // Web modules
 pub mod routes;
 
+pub mod handlers;
 pub mod jwt;
 pub mod otp;
 pub mod utils;
