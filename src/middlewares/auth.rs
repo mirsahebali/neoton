@@ -1,5 +1,3 @@
-use std::sync::Arc;
-
 use axum::{
     Json, debug_middleware,
     extract::{Request, State},
@@ -51,7 +49,7 @@ pub async fn ensure_authenticated(
                                 error: true,
                                 message: "Expired Session".into(),
                                 status: StatusCode::UNAUTHORIZED.as_u16(),
-                                user_data: None,
+                                data: None,
                             }),
                         ));
                     }
@@ -81,7 +79,7 @@ pub async fn ensure_authenticated(
                                     error: true,
                                     message: "User not found".into(),
                                     status: StatusCode::NOT_FOUND.as_u16(),
-                                    user_data: None,
+                                    data: None,
                                 }),
                             ))
                         }
@@ -97,7 +95,7 @@ pub async fn ensure_authenticated(
                             error: true,
                             message: "UNAUTHORIZED user".into(),
                             status: StatusCode::UNAUTHORIZED.as_u16(),
-                            user_data: None,
+                            data: None,
                         }),
                     ))
                 }
@@ -113,7 +111,7 @@ pub async fn ensure_authenticated(
                     error: true,
                     message: "UNAUTHORIZED user".into(),
                     status: StatusCode::UNAUTHORIZED.as_u16(),
-                    user_data: None,
+                    data: None,
                 }),
             ))
         }

@@ -9,8 +9,6 @@ const handleFormSumbit = async (
 ): Promise<{ status: number; data: any }> => {
   formData.set("enable_2fa", String(is2FAEnabled));
 
-  console.log(formData);
-
   const res = await fetch(to("/api/auth/register"), {
     method: "post",
     body: formData,
@@ -43,6 +41,7 @@ export default function Register() {
           register.input[1].get("email").toString(),
         );
         navigate("/app/chats");
+
         return;
       }
       navigate("/auth/verify", {
@@ -63,6 +62,7 @@ export default function Register() {
 
           <label class="fieldset-label w-max">
             <input
+              data-testid="2fa"
               type="checkbox"
               name="enable_2fa"
               checked={enable2FA()}
@@ -90,6 +90,7 @@ export default function Register() {
           <label class="input validator ">
             <EmailIcon />
             <input
+              data-testid="email"
               name="email"
               type="email"
               placeholder="mail@site.com"
@@ -103,6 +104,7 @@ export default function Register() {
           <label class="input">
             <UserIcon />
             <input
+              data-testid="fullname"
               name="fullname"
               type="input"
               required
@@ -114,6 +116,7 @@ export default function Register() {
           <label class="input validator">
             <UserIcon />
             <input
+              data-testid="username"
               name="username"
               type="input"
               required
@@ -135,6 +138,7 @@ export default function Register() {
           <label class="input validator ">
             <KeyIcon />
             <input
+              data-testid="password"
               type={passwordVisibility() ? "text" : "password"}
               name="password"
               required={enable2FA()}
@@ -167,7 +171,11 @@ export default function Register() {
           <label for="visibility">Show password</label>
         </div>
 
-        <button class="btn btn-info" disabled={register.pending}>
+        <button
+          data-testid="register-btn"
+          class="btn btn-info"
+          disabled={register.pending}
+        >
           {register.pending ? "Creating account..." : " Register"}
         </button>
       </form>

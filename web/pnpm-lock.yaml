@@ -11,6 +11,9 @@ importers:
       '@lutaok/solid-modal':
         specifier: ^0.1.1
         version: 0.1.1(solid-js@1.9.5)
+      '@ngneat/falso':
+        specifier: ^7.3.0
+        version: 7.3.0
       '@solid-primitives/scroll':
         specifier: ^2.1.0
         version: 2.1.0(solid-js@1.9.5)
@@ -362,6 +365,9 @@ packages:
     resolution: {integrity: sha512-2fw3JgReT7xxDDnXxQoWV7N3ldHkFMj2eyNXQa3zvUmZeZ1/KZMRiMy7qZVXYedqxQW+mRSkY80V15P6s/wJlw==}
     peerDependencies:
       solid-js: ^1.4.0
+
+  '@ngneat/falso@7.3.0':
+    resolution: {integrity: sha512-JDjy2D+fLMAIl0x9i9B9DCsmrr9UcqjLoAbjf+xKdXOkSyoU8t2DKi84Jvn9Uwj9lX02dsHAQuq3JZDUiqn22w==}
 
   '@playwright/test@1.51.1':
     resolution: {integrity: sha512-nM+kEaTSAoVlXmMPH10017vn3FSiFqr/bh4fKg9vmAdMfd9SDqRZNvPSiAHADc/itWak+qPvMPZQOPwCBW7k7Q==}
@@ -1078,6 +1084,9 @@ packages:
     resolution: {integrity: sha512-xAg7SOnEhrm5zI3puOOKyy1OMcMlIJZYNJY7xLBwSze0UjhPLnWfj2GF2EpT0jmzaJKIWKHLsaSSajf35bcYnA==}
     engines: {node: '>=v12.22.7'}
 
+  seedrandom@3.0.5:
+    resolution: {integrity: sha512-8OwmbklUNzwezjGInmZ+2clQmExQPvomqjL7LFqOYqtmuxRgQYqOD3mHaU+MvZn5FLUeVxVfQjwLZW/n/JFuqg==}
+
   semver@6.3.1:
     resolution: {integrity: sha512-BR7VvDCVHO+q2xBEWskxS6DJE1qRnb7DxzUrogb71CWoSficBxYsiAGd+Kl0mmq/MprG9yArRkyrQxTO6XjMzA==}
     hasBin: true
@@ -1197,6 +1206,10 @@ packages:
     hasBin: true
     peerDependencies:
       browserslist: '>= 4.21.0'
+
+  uuid@8.3.2:
+    resolution: {integrity: sha512-+NYs2QeMWy+GWFOEm9xnn6HCDp0l7QBD7ml8zLUmJ+93Q5NF0NocErnwkTkXVFNiX3/fpC6afS8Dhb/gz7R7eg==}
+    hasBin: true
 
   validate-html-nesting@1.2.2:
     resolution: {integrity: sha512-hGdgQozCsQJMyfK5urgFcWEqsSSrK63Awe0t/IMR0bZ0QMtnuaiHzThW81guu3qx9abLi99NEuiaN6P9gVYsNg==}
@@ -1598,6 +1611,11 @@ snapshots:
   '@lutaok/solid-modal@0.1.1(solid-js@1.9.5)':
     dependencies:
       solid-js: 1.9.5
+
+  '@ngneat/falso@7.3.0':
+    dependencies:
+      seedrandom: 3.0.5
+      uuid: 8.3.2
 
   '@playwright/test@1.51.1':
     dependencies:
@@ -2284,6 +2302,8 @@ snapshots:
     dependencies:
       xmlchars: 2.2.0
 
+  seedrandom@3.0.5: {}
+
   semver@6.3.1: {}
 
   seroval-plugins@1.2.1(seroval@1.2.1):
@@ -2405,6 +2425,8 @@ snapshots:
       browserslist: 4.24.4
       escalade: 3.2.0
       picocolors: 1.1.1
+
+  uuid@8.3.2: {}
 
   validate-html-nesting@1.2.2: {}
 

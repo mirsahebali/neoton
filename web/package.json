@@ -11,6 +11,7 @@
   },
   "dependencies": {
     "@lutaok/solid-modal": "^0.1.1",
+    "@ngneat/falso": "^7.3.0",
     "@solid-primitives/scroll": "^2.1.0",
     "@solidjs/router": "^0.15.3",
     "@tailwindcss/vite": "^4.0.15",

@@ -1,7 +1,7 @@
 import { createEffect, ParentProps } from "solid-js";
 import { InvitationToast } from "./CustomToasts";
 import { useGetUser } from "../contexts";
-import { socket } from "../socket";
+import { invitationSocket, socket } from "../socket";
 import toast from "solid-toast";
 
 export default function ListenerWrapper(props: ParentProps) {
@@ -16,7 +16,7 @@ export default function ListenerWrapper(props: ParentProps) {
   // Invitation listener
   createEffect(() => {
     // Listens to incoming invitations
-    socket.on(`invitation for ${currentUser.username}`, (sender) => {
+    invitationSocket.on(`invitation:${currentUser.username}`, (sender) => {
       InvitationToast(
         sender,
         currentUser.username,

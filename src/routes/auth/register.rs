@@ -1,3 +1,4 @@
+use crate::PROD;
 use crate::db::mutations::create_new_user;
 use crate::routes::ReturningResponse;
 use crate::routes::email::send_email_handler;
@@ -7,6 +8,7 @@ use axum::{
     extract::{Form, State},
     http::{self, StatusCode},
 };
+use axum_extra::extract::cookie::SameSite;
 use axum_extra::extract::{PrivateCookieJar, cookie::Cookie};
 use serde::{Deserialize, Serialize};
 use sqlx::Error;
@@ -77,13 +79,17 @@ pub async fn register_handler(
                             error: true,
                             message: "Internal server error".into(),
                             status: StatusCode::INTERNAL_SERVER_ERROR.as_u16(),
-                            user_data: None,
+                            data: None,
                             enabled_2fa: false,
                         }),
                     ));
                 }
 
-                let updated_jar = jar.add(Cookie::build(("ACCESS_TOKEN", token)).path("/"));
+                let updated_jar = jar.add(
+                    Cookie::build(("ACCESS_TOKEN", token))
+                        .path("/")
+                        .same_site(if *PROD { SameSite::Lax } else { SameSite::None }),
+                );
 
                 tracing::info!("Successfully sent cookie to user: {}", user.email);
 
@@ -93,7 +99,7 @@ pub async fn register_handler(
                         error: false,
                         message: "User created".into(),
                         status: StatusCode::OK.as_u16(),
-                        user_data: Some(user),
+                        data: Some(user.to_json_value()),
                         enabled_2fa: false,
                     }),
                 ));
@@ -101,7 +107,14 @@ pub async fn register_handler(
 
             let otp = OTP::new();
 
-            if let Err(err) = send_email_handler(&user.username, &user.email, &otp.token).await {
+            if let Err(err) = send_email_handler(
+                app_state.mailer.clone(),
+                &user.username,
+                &user.email,
+                &otp.token,
+            )
+            .await
+            {
                 tracing::error!("ERROR sending email to {}", &user.email);
                 tracing::error!("{err}");
                 return Err((
@@ -110,7 +123,7 @@ pub async fn register_handler(
                         error: true,
                         message: "Error sending email".into(),
                         status: StatusCode::BAD_REQUEST.as_u16(),
-                        user_data: None,
+                        data: None,
                         enabled_2fa: false,
                     }),
                 ));
@@ -130,7 +143,7 @@ pub async fn register_handler(
                     error: false,
                     message: "OTP sent to user email".into(),
                     status: StatusCode::OK.as_u16(),
-                    user_data: None,
+                    data: None,
                     enabled_2fa: true,
                 }),
             ))
@@ -144,7 +157,7 @@ pub async fn register_handler(
                     error: true,
                     message: "Internal server error".into(),
                     status: StatusCode::INTERNAL_SERVER_ERROR.as_u16(),
-                    user_data: None,
+                    data: None,
                     enabled_2fa: false,
                 }),
             ))

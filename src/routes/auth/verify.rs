@@ -1,9 +1,12 @@
 use axum::{Form, Json, debug_handler, extract::State, http::StatusCode};
-use axum_extra::extract::{PrivateCookieJar, cookie::Cookie};
+use axum_extra::extract::{
+    PrivateCookieJar,
+    cookie::{Cookie, SameSite},
+};
 use serde::Deserialize;
 
 use crate::{
-    AppState,
+    AppState, PROD,
     db::queries::get_one_user_by_email,
     jwt::{UserClaims, encode_jwt},
     models::User,
@@ -41,7 +44,7 @@ pub async fn verify_otp(
                         message: "Invalid token".into(),
                         enabled_2fa: false,
                         status: StatusCode::UNAUTHORIZED.as_u16(),
-                        user_data: None,
+                        data: None,
                     }),
                 ));
             }
@@ -60,12 +63,17 @@ pub async fn verify_otp(
                                 error: true,
                                 status: StatusCode::INTERNAL_SERVER_ERROR.as_u16(),
                                 message: "Internal Server Error".into(),
-                                user_data: None,
+                                data: None,
                             }),
                         ));
                     }
 
-                    let updated_jar = jar.add(Cookie::new("ACCESS_TOKEN", token));
+                    let updated_jar = jar.add(
+                        Cookie::build(("ACCESS_TOKEN", token))
+                            .path("/")
+                            .same_site(if *PROD { SameSite::Lax } else { SameSite::None })
+                            .secure(*PROD),
+                    );
 
                     tracing::info!("successfully verified user and sent token to {user:?}");
 
@@ -76,7 +84,7 @@ pub async fn verify_otp(
                             error: false,
                             status: StatusCode::OK.as_u16(),
                             message: "Verified user successfully".into(),
-                            user_data: Some(user),
+                            data: Some(user.to_json_value()),
                         }),
                     ))
                 }
@@ -89,7 +97,7 @@ pub async fn verify_otp(
                             error: true,
                             status: StatusCode::NOT_FOUND.as_u16(),
                             message: "Error getting user".into(),
-                            user_data: None,
+                            data: None,
                         }),
                     ))
                 }
@@ -104,7 +112,7 @@ pub async fn verify_otp(
                     error: true,
                     status: StatusCode::NOT_FOUND.as_u16(),
                     message: "Invalid Token".into(),
-                    user_data: None,
+                    data: None,
                 }),
             ))
         }

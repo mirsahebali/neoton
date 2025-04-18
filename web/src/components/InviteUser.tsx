@@ -22,7 +22,10 @@ export default function InviteUser() {
       return;
     }
 
-    invitationSocket.emit("user:invite", [currentUser.username, username()]);
+    invitationSocket.emit("user:invite", {
+      sender: { username: currentUser.username, id: currentUser.id },
+      recv_username: username(),
+    });
     let newRequests = await refetchRequests();
     if (!newRequests) return;
     setCurrentUser("requests", newRequests);

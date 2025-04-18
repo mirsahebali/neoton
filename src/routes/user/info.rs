@@ -29,7 +29,7 @@ pub async fn get_user(
                 error: true,
                 message: "error getting user".into(),
                 status: StatusCode::NOT_FOUND.as_u16(),
-                user_data: None,
+                data: None,
                 enabled_2fa: false,
             }))
         }
@@ -54,7 +54,7 @@ pub async fn get_contacts(
                         error: true,
                         status: StatusCode::NOT_FOUND.as_u16(),
                         message: "contacts not found".to_string(),
-                        user_data: None,
+                        data: None,
                         enabled_2fa: false,
                     }),
                 ))
@@ -67,7 +67,7 @@ pub async fn get_contacts(
                         error: true,
                         status: StatusCode::INTERNAL_SERVER_ERROR.as_u16(),
                         message: "Internal server error".to_string(),
-                        user_data: None,
+                        data: None,
                         enabled_2fa: false,
                     }),
                 ))
@@ -95,7 +95,7 @@ pub async fn get_invites(
                         error: true,
                         status: StatusCode::NOT_FOUND.as_u16(),
                         message: "contacts not found".to_string(),
-                        user_data: None,
+                        data: None,
                         enabled_2fa: false,
                     }),
                 ))
@@ -108,7 +108,7 @@ pub async fn get_invites(
                         error: true,
                         status: StatusCode::INTERNAL_SERVER_ERROR.as_u16(),
                         message: "Internal server error".to_string(),
-                        user_data: None,
+                        data: None,
                         enabled_2fa: false,
                     }),
                 ))
@@ -136,7 +136,7 @@ pub async fn get_requests(
                         error: true,
                         status: StatusCode::NOT_FOUND.as_u16(),
                         message: "contacts not found".to_string(),
-                        user_data: None,
+                        data: None,
                         enabled_2fa: false,
                     }),
                 ))
@@ -149,7 +149,7 @@ pub async fn get_requests(
                         error: true,
                         status: StatusCode::INTERNAL_SERVER_ERROR.as_u16(),
                         message: "Internal server error".to_string(),
-                        user_data: None,
+                        data: None,
                         enabled_2fa: false,
                     }),
                 ))
@@ -178,7 +178,7 @@ pub async fn get_conversations(
                         error: true,
                         status: StatusCode::NOT_FOUND.as_u16(),
                         message: "no conversations not found".to_string(),
-                        user_data: None,
+                        data: None,
                         enabled_2fa: false,
                     }),
                 ))
@@ -191,7 +191,7 @@ pub async fn get_conversations(
                         error: true,
                         status: StatusCode::INTERNAL_SERVER_ERROR.as_u16(),
                         message: "Internal server error".to_string(),
-                        user_data: None,
+                        data: None,
                         enabled_2fa: false,
                     }),
                 ))

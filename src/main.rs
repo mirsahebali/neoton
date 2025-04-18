@@ -1,18 +1,16 @@
 #![allow(dead_code)]
 
-use std::sync::Arc;
-
 use axum::{
     Json, Router,
-    extract::State,
     http::StatusCode,
     middleware::from_fn_with_state,
     response::IntoResponse,
     routing::{delete, get, post},
 };
+use clap::Parser;
 use neolink::{
-    AppState, get_connection_pool,
-    handlers::realtime::invite_user,
+    AppState, DATABASE_URL, PROD, get_connection_pool,
+    handlers::realtime::{accept_user, invite_user},
     middlewares::auth::ensure_authenticated,
     routes::{
         ReturningResponse,
@@ -31,6 +29,17 @@ use tower_http::{
     services::{ServeDir, ServeFile},
     trace::TraceLayer,
 };
+
+#[derive(Parser, Debug)]
+pub struct RunArgs {
+    #[arg(short, long, default_value_t = 8080)]
+    port: u16,
+
+    /// postgres database url
+    #[arg(short, long)]
+    database_url: String,
+}
+
 use tracing_subscriber::{layer::SubscriberExt, registry, util::SubscriberInitExt};
 
 #[tokio::main]
@@ -58,11 +67,16 @@ async fn main() -> anyhow::Result<()> {
     io.ns("/invitation", |s: SocketRef| {
         tracing::info!("invitation socket connected");
         s.on("user:invite", invite_user);
+        s.on("user:accept", accept_user);
+    });
+
+    io.ns("/message", |s: SocketRef| {
+        tracing::info!("messaging socket connected");
     });
 
     let db_router = Router::new()
         .route("/user", get(get_user))
-        .route("/health", get(async || "Should only get on correct token"))
+        .route("/health", get(async || "Should only get on valid token"))
         .route("/user/chats", get(get_conversations))
         .route("/user/contacts", get(get_contacts))
         .route("/user/requests", get(get_requests))
@@ -87,11 +101,16 @@ async fn main() -> anyhow::Result<()> {
         .layer(CorsLayer::new().allow_origin([
             "http://localhost:5173".parse().unwrap(),
             "https://neolink.saheb.me".parse().unwrap(),
+            "https://neolink.space".parse().unwrap(),
         ]))
         .with_state(app_state.clone());
 
     // run our app with hyper, listening globally on port 8080
     tracing::info!("Binding to TCP");
+    tracing::info!(
+        "Running in {}",
+        if *PROD { "Production" } else { "Development" }
+    );
     let listener = tokio::net::TcpListener::bind("0.0.0.0:8080").await?;
     tracing::info!("Booting server");
     axum::serve(listener, app).await?;
@@ -114,6 +133,6 @@ async fn check_health() -> impl IntoResponse {
         error: false,
         message: "Your outie likes rust".into(),
         status: StatusCode::OK.as_u16(),
-        user_data: None,
+        data: None,
     })
 }

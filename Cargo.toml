@@ -9,6 +9,7 @@ axum = { version = "0.8.3", features = ["multipart", "ws", "macros"] }
 axum-extra = { version = "0.10.1", features = ["cookie-signed", "cookie", "cookie-private", "multipart", "attachment", "async-read-body"] }
 bcrypt = { version = "0.17.0", features = ["std"] }
 chrono = { version = "0.4.40", features = ["serde", "clock"] }
+clap = { version = "4.5.36", features = ["derive"] }
 dotenvy = "0.15.7"
 jsonwebtoken = "9.3.1"
 lettre = { version = "0.11.15", features = ["tracing", "tokio1", "tokio1-native-tls"] }
@@ -24,4 +25,5 @@ tower = "0.5.2"
 tower-http = { version = "0.6.2", features = ["fs", "trace", "compression-gzip", "redirect", "cors", "async-compression", "full", "mime", "mime_guess"] }
 tracing = "0.1.41"
 tracing-subscriber = { version = "0.3.19", features = ["json", "chrono", "serde", "serde_json", "time", "env-filter"] }
+url = { version = "2.5.4", features = ["serde"] }
 

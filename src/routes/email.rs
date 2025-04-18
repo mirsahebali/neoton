@@ -1,21 +1,11 @@
-use std::sync::LazyLock;
-
 use lettre::{
     AsyncSmtpTransport, AsyncTransport, Message, Tokio1Executor,
     message::header::ContentType,
-    transport::smtp::{Error, authentication::Credentials, response::Response},
+    transport::smtp::{Error, response::Response},
 };
 
-static SMTP_EMAIL_USERNAME: LazyLock<String> =
-    LazyLock::new(|| std::env::var("SMTP_EMAIL_USERNAME").expect("SMTP_EMAIL_USERNAME is not set"));
-
-static SMTP_EMAIL_PASSWORD: LazyLock<String> =
-    LazyLock::new(|| std::env::var("SMTP_EMAIL_PASSWORD").expect("SMTP_EMAIL_PASSWORD is not set"));
-
-static SMTP_EMAIL_RELAY: LazyLock<String> =
-    LazyLock::new(|| std::env::var("SMTP_EMAIL_RELAY").expect("SMTP_EMAIL_RELAY is not set"));
-
 pub async fn send_email_handler(
+    mailer: AsyncSmtpTransport<Tokio1Executor>,
     username: &String,
     email: &String,
     token: &u16,
@@ -44,20 +34,6 @@ pub async fn send_email_handler(
         ))
         .map_err(|err| tracing::error!("ERROR building the message, {err}"))
         .unwrap();
-
-    let creds = Credentials::new(
-        SMTP_EMAIL_USERNAME.to_owned(),
-        SMTP_EMAIL_PASSWORD.to_owned(),
-    );
-
-    let mailer: AsyncSmtpTransport<Tokio1Executor> =
-        AsyncSmtpTransport::<Tokio1Executor>::relay(&SMTP_EMAIL_RELAY)
-            .map_err(|err| {
-                tracing::error!("setting relay for transport: {}, {err}", *SMTP_EMAIL_RELAY)
-            })
-            .unwrap()
-            .credentials(creds)
-            .build();
 
     mailer.send(email).await
 }

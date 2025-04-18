@@ -8,6 +8,10 @@ const handleFormSumbit = async (formData: FormData) => {
     body: formData,
   });
 
+  for (const pair of res.headers.entries()) {
+    console.log("%s: %s", pair[0], pair[1]);
+  }
+
   const data: {
     status: number;
     data: { enabled2fa: boolean; error: boolean; message: string };
@@ -29,6 +33,10 @@ export default function Login() {
       return;
     }
     if (login.result) {
+      if (login.result.status === 404) {
+        toast.error("User not found");
+        return;
+      }
       if (login.result.data.enabled2fa === true) {
         navigate("/auth/verify", { state: { email: email() } });
         return;
