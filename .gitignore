@@ -7,3 +7,7 @@ drizzle
 neolink-dev.db
 web/node_modules
 web/dist
+
+target
+misc
+
