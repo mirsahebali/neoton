@@ -54,7 +54,7 @@ export default function Login() {
         method="post"
         class="mt-5 flex items-center justify-center flex-col gap-3"
       >
-        <h1 class="text-2xl text-center font-bold "> Log in to NeoLink</h1>
+        <h1 class="text-2xl text-center font-bold "> Log in to Neoton</h1>
         <div class="">
           <label class="input validator ">
             <EmailIcon />

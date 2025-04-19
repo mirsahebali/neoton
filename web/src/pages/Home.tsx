@@ -11,7 +11,7 @@ export default function About() {
           href="/auth/register"
           class="btn join-item w-fit btn-success btn-lg btn-outline"
         >
-          Join Neolink
+          Join Neoton
         </A>
         <A href="/auth/login" class="btn join-item w-fit btn-success btn-lg ">
           Sign In

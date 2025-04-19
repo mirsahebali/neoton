@@ -8,7 +8,7 @@ use axum::{
     routing::{delete, get, post},
 };
 use clap::Parser;
-use neolink::{
+use neoton::{
     AppState, DATABASE_URL, PROD, get_connection_pool,
     handlers::realtime::{accept_user, invite_user},
     middlewares::auth::ensure_authenticated,
@@ -100,8 +100,8 @@ async fn main() -> anyhow::Result<()> {
         .layer(TraceLayer::new_for_http())
         .layer(CorsLayer::new().allow_origin([
             "http://localhost:5173".parse().unwrap(),
-            "https://neolink.saheb.me".parse().unwrap(),
-            "https://neolink.space".parse().unwrap(),
+            "https://neoton.saheb.me".parse().unwrap(),
+            "https://neoton.space".parse().unwrap(),
         ]))
         .with_state(app_state.clone());
 

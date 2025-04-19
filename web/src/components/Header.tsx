@@ -6,7 +6,7 @@ export default function Header() {
       {/* <img src="/logo.png" alt="logo" /> */}
       <a class="text-2xl font-bold" href="/">
         {" "}
-        Neolink
+        Neoton
       </a>
       <ThemeChanger />
     </header>

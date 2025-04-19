@@ -7,19 +7,19 @@ test("has title", async ({ page }) => {
   await page.goto(currPage);
 
   // Expect a title "to contain" a substring.
-  await expect(page).toHaveTitle(/Neolink/);
+  await expect(page).toHaveTitle(/Neoton/);
 });
 
 test("register link", async ({ page }) => {
   await page.goto("http://localhost:8080/");
 
   // Click the get started link.
-  await page.getByRole("link", { name: "Join Neolink" }).click();
+  await page.getByRole("link", { name: "Join Neoton" }).click();
 });
 
 test("can login", async ({ page }) => {
   await page.goto(currPage);
-  await page.getByText("Join Neolink").click();
+  await page.getByText("Join Neoton").click();
   await page.getByTestId("2fa").check();
 
   await page.getByTestId("email").fill(randEmail());

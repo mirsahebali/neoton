@@ -10,7 +10,7 @@ export default function HomeLayout(props: ParentProps) {
       <footer class="fixed bottom-0 w-full mt-5 bg-neutral text-neutral-content p-10">
         <div class="flex items-center gap-3 justify-center">
           <span class="text-lg"> Created by</span>{" "}
-          <b class="text-xl">The Neolink Team</b>
+          <b class="text-xl">The Neoton Team</b>
         </div>
       </footer>
 

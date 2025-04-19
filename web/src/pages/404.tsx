@@ -9,11 +9,11 @@ export default function NotFound() {
       <p class="mt-8">
         Visit{" "}
         <a
-          href="https://gitlab.com/neolink/neolink"
+          href="https://github.com/mirsahebali/neoton"
           target="_blank"
           class="text-sky-600 hover:underline"
         >
-          gitlab.com/neolink/neolink
+          github.com/mirsahebali/neoton
         </a>{" "}
         issues
       </p>
