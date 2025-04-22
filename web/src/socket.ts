@@ -1,4 +1,8 @@
 import { io } from "socket.io-client";
-export const socket = io();
+export const rootSocket = io(
+  import.meta.env.PROD ? undefined : "http://localhost:8080",
+);
 
-export const invitationSocket = io("/invitation");
+export const invitationSocket = io(
+  (import.meta.env.PROD ? "" : "http://localhost:8080") + "/invitation",
+);

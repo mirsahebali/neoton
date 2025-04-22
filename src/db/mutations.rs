@@ -1,4 +1,4 @@
-use sqlx::{Pool, Postgres};
+use sqlx::{Pool, Postgres, postgres::PgQueryResult};
 
 use crate::{models::User, utils::hash_password};
 
@@ -24,5 +24,19 @@ pub async fn create_new_user(
         enable_2fa
     )
     .fetch_one(conn)
+    .await
+}
+
+pub async fn add_user_invite(
+    conn: &Pool<Postgres>,
+    sender_id: i32,
+    recv_id: i32,
+) -> Result<PgQueryResult, sqlx::Error> {
+    sqlx::query!(
+        "INSERT INTO contacts(sender_id, recv_id) VALUES ($1, $2)",
+        sender_id,
+        recv_id
+    )
+    .execute(conn)
     .await
 }

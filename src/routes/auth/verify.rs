@@ -3,6 +3,7 @@ use axum_extra::extract::{
     PrivateCookieJar,
     cookie::{Cookie, SameSite},
 };
+use cookie::time::{Duration, OffsetDateTime};
 use serde::Deserialize;
 
 use crate::{
@@ -72,7 +73,9 @@ pub async fn verify_otp(
                         Cookie::build(("ACCESS_TOKEN", token))
                             .path("/")
                             .same_site(if *PROD { SameSite::Lax } else { SameSite::None })
-                            .secure(*PROD),
+                            .secure(true)
+                            .http_only(true)
+                            .expires(OffsetDateTime::now_utc().saturating_add(Duration::days(7))),
                     );
 
                     tracing::info!("successfully verified user and sent token to {user:?}");

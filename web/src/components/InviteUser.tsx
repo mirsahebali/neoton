@@ -5,6 +5,7 @@ import { useGetUser } from "../contexts";
 import _ from "lodash";
 import toast from "solid-toast";
 import { AiOutlineUserAdd } from "solid-icons/ai";
+import { SocketSendInviteData } from "../types";
 
 export default function InviteUser() {
   const [username, setUsername] = createSignal("");
@@ -25,7 +26,7 @@ export default function InviteUser() {
     invitationSocket.emit("user:invite", {
       sender: { username: currentUser.username, id: currentUser.id },
       recv_username: username(),
-    });
+    } as SocketSendInviteData);
     let newRequests = await refetchRequests();
     if (!newRequests) return;
     setCurrentUser("requests", newRequests);

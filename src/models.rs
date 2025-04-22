@@ -4,7 +4,7 @@ use serde_json::{Value, json};
 use sqlx::FromRow;
 use url::Url;
 
-#[derive(Serialize, Deserialize, Debug, PartialEq, PartialOrd, FromRow)]
+#[derive(Default, Serialize, Deserialize, Debug, PartialEq, PartialOrd, FromRow)]
 pub struct User {
     pub id: i32,
     pub username: String,

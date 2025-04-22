@@ -4,6 +4,7 @@ use axum_extra::extract::{
     cookie::{Cookie, SameSite},
 };
 
+use cookie::time::{Duration, OffsetDateTime};
 use serde::Deserialize;
 
 use crate::{
@@ -20,7 +21,6 @@ use crate::routes::ReturningResponse;
 
 #[derive(Deserialize, Debug)]
 pub struct UserLoginInput {
-    pub username: String,
     pub email: String,
     pub password: String,
 }
@@ -73,11 +73,15 @@ pub async fn login_handler(
                     ));
                 }
 
-                let updated_jar = jar.add(
+                let updated_jar = jar.remove(Cookie::from("ACCESS_TOKEN"));
+
+                let updated_jar = updated_jar.add(
                     Cookie::build(("ACCESS_TOKEN", token))
                         .path("/")
                         .same_site(if *PROD { SameSite::Lax } else { SameSite::None })
-                        .secure(*PROD),
+                        .secure(true)
+                        .http_only(true)
+                        .expires(OffsetDateTime::now_utc().saturating_add(Duration::days(7))),
                 );
 
                 tracing::info!("Successfully sent cookie to user: {}", user.email);

@@ -12,6 +12,7 @@ const handleFormSumbit = async (
   const res = await fetch(to("/api/auth/register"), {
     method: "post",
     body: formData,
+    credentials: import.meta.env.PROD ? "same-origin" : "include",
   });
 
   return { status: res.status, data: await res.json() };
@@ -60,7 +61,7 @@ export default function Register() {
         <fieldset class="fieldset p-4 bg-base-100 border border-base-300 rounded-box w-fit">
           <legend class="fieldset-legend">Account Options</legend>
 
-          <label class="fieldset-label w-max">
+          <label class="fieldset-label w-max" for="enable_2fa">
             <input
               data-testid="2fa"
               type="checkbox"
@@ -87,7 +88,7 @@ export default function Register() {
           </label>
         </fieldset>
         <div class="">
-          <label class="input validator ">
+          <label class="input validator " for="email">
             <EmailIcon />
             <input
               data-testid="email"
@@ -101,11 +102,12 @@ export default function Register() {
         </div>
 
         <div>
-          <label class="input">
+          <label class="input" for="fullname">
             <UserIcon />
             <input
               data-testid="fullname"
               name="fullname"
+              autocomplete="off"
               type="input"
               required
               placeholder="Full Name"
@@ -113,10 +115,11 @@ export default function Register() {
           </label>
         </div>
         <div>
-          <label class="input validator">
+          <label class="input validator" for="username">
             <UserIcon />
             <input
               data-testid="username"
+              autocomplete="off"
               name="username"
               type="input"
               required
@@ -135,10 +138,11 @@ export default function Register() {
         </div>
 
         <div class="">
-          <label class="input validator ">
+          <label class="input validator " for="password">
             <KeyIcon />
             <input
               data-testid="password"
+              autocomplete="off"
               type={passwordVisibility() ? "text" : "password"}
               name="password"
               required={enable2FA()}

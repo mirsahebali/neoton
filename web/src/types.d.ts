@@ -3,25 +3,13 @@ import type { SetStoreFunction } from "solid-js/store";
 export interface UserInfo {
   email: string;
   username: string;
-  id: string;
-}
-
-export interface InviteInfo {
-  sender_email: string;
-  sender_username: string;
-  sender_id: string;
-}
-
-export interface RequestsInfo {
-  recv_email: string;
-  recv_username: string;
-  recv_id: string;
+  id: number;
 }
 
 export interface UserStoreInfo extends UserInfo {
   contacts: UserInfo[];
-  invites: InviteInfo[];
-  requests: RequestsInfo[];
+  invites: UserInfo[];
+  requests: UserInfo[];
   numberOfContacts: number;
   numberOfRequests: number;
   numberOfInvites: number;
@@ -41,11 +29,11 @@ export interface ContactMessages {
 }
 
 export interface Message {
-  id: string;
+  id: number | string;
   content: string;
-  sent_at: number;
-  sent_by: string;
-  recv_by: string;
+  sent_at: number | string;
+  sent_by: number | string;
+  recv_by: number | string;
 }
 
 export interface CurrentUserStore {
@@ -62,10 +50,10 @@ export type RefetchContacts = (
 
 export type RefetchInvites = (
   info?: unknown,
-) => InviteInfo[] | Promise<InviteInfo[] | undefined> | null | undefined;
+) => UserInfo[] | Promise<UserInfo[] | undefined> | null | undefined;
 export type RefetchRequests = (
   info?: unknown,
-) => RequestsInfo[] | Promise<RequestsInfo[] | undefined> | null | undefined;
+) => UserInfo[] | Promise<UserInfo[] | undefined> | null | undefined;
 
 export type SetCurrentUserFunction = SetStoreFunction<UserStoreInfo>;
 
@@ -74,4 +62,9 @@ export interface Contact {
   recv_id: string;
 
   request_accepted: boolean;
+}
+
+export interface SocketSendInviteData {
+  sender: { username: string; id: number };
+  recv_username: string;
 }

@@ -11,10 +11,12 @@
   },
   "dependencies": {
     "@lutaok/solid-modal": "^0.1.1",
+    "@modular-forms/solid": "^0.25.1",
     "@ngneat/falso": "^7.3.0",
     "@solid-primitives/scroll": "^2.1.0",
     "@solidjs/router": "^0.15.3",
     "@tailwindcss/vite": "^4.0.15",
+    "axios": "^1.8.4",
     "emoji-picker-element": "^1.26.1",
     "lodash": "^4.17.21",
     "socket.io": "^4.8.1",
@@ -33,6 +35,7 @@
     "jsdom": "^26.0.0",
     "typescript": "~5.7.2",
     "vite": "^6.2.0",
+    "vite-plugin-mkcert": "^1.17.8",
     "vite-plugin-solid": "^2.11.2",
     "vitest": "^3.1.1"
   },

@@ -7,7 +7,7 @@ import {
   AiOutlineMessage,
 } from "solid-icons/ai";
 import { ImCross } from "solid-icons/im";
-import { socket } from "../socket";
+import { rootSocket } from "../socket";
 import toast from "solid-toast";
 import _ from "lodash";
 import { acceptInvite, refetchSetUserStore } from "../utils";
@@ -22,7 +22,7 @@ export default function Contacts() {
   } = useGetUser();
 
   createEffect(() => {
-    socket.on(`accept-success:${currentUser.username}`, (recvUsername) => {
+    rootSocket.on(`accept-success:${currentUser.username}`, (recvUsername) => {
       toast.success(recvUsername + " accepted your invite");
       refetchContacts();
       refetchInvites();
@@ -49,16 +49,11 @@ export default function Contacts() {
           >
             {(invite) => (
               <li class="list-row flex justify-between items-center">
-                <div class="text-lg font-semibold">
-                  @{invite.sender_username}
-                </div>
+                <div class="text-lg font-semibold">@{invite.username}</div>
                 <div class="flex gap-4">
                   <button
                     onClick={async () => {
-                      acceptInvite(
-                        invite.sender_username,
-                        currentUser.username,
-                      );
+                      acceptInvite(invite.username, currentUser.username);
                       await refetchSetUserStore(
                         setCurrentUser,
                         refetchContacts,
@@ -97,9 +92,7 @@ export default function Contacts() {
           >
             {(request) => (
               <li class="list-row flex justify-between items-center">
-                <div class="text-lg font-semibold">
-                  @{request.recv_username}
-                </div>
+                <div class="text-lg font-semibold">@{request.username}</div>
                 <button class="btn btn-circle btn-error text-xl font-bold">
                   <AiOutlineDelete />
                 </button>

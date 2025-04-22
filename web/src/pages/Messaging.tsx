@@ -1,7 +1,7 @@
 import { useParams } from "@solidjs/router";
 import { BsSend } from "solid-icons/bs";
 import { createEffect, createResource, createSignal, For } from "solid-js";
-import { socket } from "../socket";
+import { rootSocket } from "../socket";
 import { useGetUser } from "../contexts";
 import { getMessagesOfContact } from "../requests";
 import "emoji-picker-element";
@@ -31,7 +31,7 @@ export default function Messaging() {
   createEffect(() => {
     const recieveEventName = `recieve-message:${currentUser.username}`;
     console.log("Event name", recieveEventName);
-    socket.on(recieveEventName, async ([_, content, senderId, sentAt]) => {
+    rootSocket.on(recieveEventName, async ([_, content, senderId, sentAt]) => {
       console.log("Tiggerred?");
       await refetchMessages();
       let currMessage = {
@@ -39,7 +39,7 @@ export default function Messaging() {
         sent_by: senderId,
         recv_by: currentUser.username,
         sent_at: sentAt,
-        id: "",
+        id: -1,
       };
       setMessages((messages) => {
         messages.push(currMessage);
@@ -51,7 +51,7 @@ export default function Messaging() {
   async function sendMessage(e: Event) {
     e.preventDefault();
     if (!message()) return;
-    socket.emit("send-message", [
+    rootSocket.emit("send-message", [
       currentUser.username,
       params.username,
       message(),

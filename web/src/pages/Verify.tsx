@@ -14,6 +14,7 @@ const handleVerifyOTP = async (email: string, formData: FormData) => {
   const res = await fetch(to("/api/auth/verify"), {
     method: "post",
     body: formData,
+    credentials: import.meta.env.PROD ? "same-origin" : "include",
   });
   const data = await res.json();
   return data;

@@ -2,15 +2,15 @@
 
 use axum::{
     Json, Router,
-    http::StatusCode,
+    http::{Method, StatusCode},
     middleware::from_fn_with_state,
     response::IntoResponse,
     routing::{delete, get, post},
 };
 use clap::Parser;
 use neoton::{
-    AppState, DATABASE_URL, PROD, get_connection_pool,
-    handlers::realtime::{accept_user, invite_user},
+    AppState, PROD, get_connection_pool,
+    handlers::realtime::{accept_user_invite, invite_user},
     middlewares::auth::ensure_authenticated,
     routes::{
         ReturningResponse,
@@ -65,9 +65,10 @@ async fn main() -> anyhow::Result<()> {
 
     // invitations namespace
     io.ns("/invitation", |s: SocketRef| {
-        tracing::info!("invitation socket connected");
+        let _ = s.emit("connection", "server connection established");
+
         s.on("user:invite", invite_user);
-        s.on("user:accept", accept_user);
+        s.on("user:accept", accept_user_invite);
     });
 
     io.ns("/message", |s: SocketRef| {
@@ -98,11 +99,22 @@ async fn main() -> anyhow::Result<()> {
         .fallback_service(ServeDir::new("web/dist").fallback(ServeFile::new("web/dist/index.html")))
         .layer(socket_io_layer)
         .layer(TraceLayer::new_for_http())
-        .layer(CorsLayer::new().allow_origin([
-            "http://localhost:5173".parse().unwrap(),
-            "https://neoton.saheb.me".parse().unwrap(),
-            "https://neoton.space".parse().unwrap(),
-        ]))
+        .layer(
+            CorsLayer::new()
+                .allow_origin([
+                    "https://localhost:5173".parse().unwrap(),
+                    "https://neoton.saheb.me".parse().unwrap(),
+                    "https://neoton.space".parse().unwrap(),
+                ])
+                .allow_methods([
+                    Method::GET,
+                    Method::POST,
+                    Method::PUT,
+                    Method::PATCH,
+                    Method::DELETE,
+                ])
+                .allow_credentials(!*PROD),
+        )
         .with_state(app_state.clone());
 
     // run our app with hyper, listening globally on port 8080

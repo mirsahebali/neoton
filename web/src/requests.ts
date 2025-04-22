@@ -2,7 +2,14 @@ import { createAsync, useNavigate } from "@solidjs/router";
 import { sleep, to } from "./utils";
 import { createEffect } from "solid-js";
 import toast from "solid-toast";
-import { Chat, InviteInfo, Message, RequestsInfo, UserInfo } from "./types";
+import { Chat, Message, UserInfo } from "./types";
+import axios from "axios";
+
+export const instance = axios.create({
+  baseURL: import.meta.env.PROD ? "" : "http://localhost:8080",
+  timeout: 1000,
+  withCredentials: true,
+});
 
 export const checkSessionRequest = (
   failedRoute: string,
@@ -31,15 +38,17 @@ export const checkSessionRequest = (
 export const getUser = async (): Promise<UserInfo | undefined> => {
   const res = await fetch(to(`/api/db/user`), {
     method: "get",
+    credentials: import.meta.env.PROD ? "same-origin" : "include",
   });
+
   if (!res.ok) {
-    toast.error("User not found", { duration: 3000 });
+    toast.error("Error getting user", { duration: 3000 });
     toast.loading("Redirecting to log after 3 seconds....", { duration: 3000 });
     await sleep(3000);
     console.error(
       "Error getting user: \nStatus: %s\nText: %s",
       res.status,
-      res.statusText,
+      await res.text(),
     );
 
     if (res.status === 404 || res.status === 401)
@@ -51,7 +60,6 @@ export const getUser = async (): Promise<UserInfo | undefined> => {
   try {
     data = await res.json();
   } catch (e) {
-    alert("error parsing user to json");
     console.log(await res.text());
     console.error(e);
     return;
@@ -63,6 +71,7 @@ export const getUser = async (): Promise<UserInfo | undefined> => {
 export const getContacts = async (): Promise<UserInfo[] | undefined> => {
   const res = await fetch(to(`/api/db/user/contacts`), {
     method: "get",
+    credentials: import.meta.env.PROD ? "same-origin" : "include",
   });
   if (!res.ok) {
     console.error("ERROR: status -> ", res.statusText);
@@ -82,9 +91,10 @@ export const getContacts = async (): Promise<UserInfo[] | undefined> => {
   return data;
 };
 
-export const getInvites = async (): Promise<InviteInfo[] | undefined> => {
+export const getInvites = async (): Promise<UserInfo[] | undefined> => {
   const res = await fetch(to(`/api/db/user/invites`), {
     method: "get",
+    credentials: import.meta.env.PROD ? "same-origin" : "include",
   });
   if (!res.ok) {
     console.error("ERROR: status -> ", res.statusText);
@@ -105,9 +115,10 @@ export const getInvites = async (): Promise<InviteInfo[] | undefined> => {
   return data;
 };
 
-export const getRequests = async (): Promise<RequestsInfo[] | undefined> => {
+export const getRequests = async (): Promise<UserInfo[] | undefined> => {
   const res = await fetch(to(`/api/db/user/requests`), {
     method: "get",
+    credentials: import.meta.env.PROD ? "same-origin" : "include",
   });
   if (!res.ok) {
     console.error("ERROR: status -> ", res.statusText);
@@ -119,6 +130,7 @@ export const getRequests = async (): Promise<RequestsInfo[] | undefined> => {
   try {
     data = await res.json();
   } catch (error) {
+    console.log("ERROR getting user details");
     console.error(error);
     // @ts-ignore
     toast.error(error.toString());
@@ -132,6 +144,7 @@ export const getMessagesOfContact = async (
 ): Promise<Message[] | undefined> => {
   const res = await fetch(to("/api/db/user/messages/" + username), {
     method: "get",
+    credentials: import.meta.env.PROD ? "same-origin" : "include",
   });
 
   if (!res.ok) {
@@ -144,6 +157,7 @@ export const getMessagesOfContact = async (
   try {
     contactMessages = await res.json();
   } catch (error) {
+    console.log("ERROR getting contact messages");
     console.error(error);
     // @ts-ignore
     toast.error(error.toString());
@@ -155,6 +169,7 @@ export const getMessagesOfContact = async (
 export const getChats = async (): Promise<Chat[] | undefined> => {
   const res = await fetch(to("/api/db/user/chats"), {
     method: "get",
+    credentials: import.meta.env.PROD ? "same-origin" : "include",
   });
 
   if (!res.ok) {

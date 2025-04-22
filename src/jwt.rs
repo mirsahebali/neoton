@@ -1,6 +1,10 @@
 use std::sync::LazyLock;
 
-use crate::{JWT_SECRET, models::User, utils::time_now};
+use crate::{
+    JWT_SECRET,
+    models::User,
+    utils::{time_now_ms_with_exp, time_now_ns},
+};
 use jsonwebtoken::{DecodingKey, EncodingKey, Header, Validation, decode, encode};
 use serde::{Deserialize, Serialize};
 
@@ -19,22 +23,20 @@ impl Keys {
 }
 pub static KEYS: LazyLock<Keys> = LazyLock::new(|| Keys::new(JWT_SECRET.as_bytes()));
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, PartialEq, PartialOrd, Clone)]
 pub struct UserClaims {
     pub username: String,
     pub email: String,
     pub hashed_password: String,
     pub enabled_2fa: bool,
     pub is_verified: bool,
-    pub iat: u128,
-    pub exp: u128,
+    pub iat: i128,
+    pub exp: i128,
 }
-
-const EXP_TIME: u128 = 7 * 24 * 60 * 60 * 100; // 7 days
 
 impl UserClaims {
     pub fn new(user: &User) -> Self {
-        let now_time = time_now();
+        let (iat, exp) = time_now_ms_with_exp();
 
         Self {
             username: user.username.clone(),
@@ -42,13 +44,13 @@ impl UserClaims {
             hashed_password: user.hashed_password.clone(),
             enabled_2fa: user.enabled_2fa,
             is_verified: user.is_verified,
-            iat: now_time,
-            exp: now_time + EXP_TIME,
+            iat,
+            exp,
         }
     }
 
     pub fn is_expired(&self) -> bool {
-        self.exp <= time_now()
+        self.exp <= time_now_ns()
     }
 }
 

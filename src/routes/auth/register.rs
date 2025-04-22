@@ -10,6 +10,7 @@ use axum::{
 };
 use axum_extra::extract::cookie::SameSite;
 use axum_extra::extract::{PrivateCookieJar, cookie::Cookie};
+use cookie::time::{Duration, OffsetDateTime};
 use serde::{Deserialize, Serialize};
 use sqlx::Error;
 use sqlx::prelude::*;
@@ -88,7 +89,10 @@ pub async fn register_handler(
                 let updated_jar = jar.add(
                     Cookie::build(("ACCESS_TOKEN", token))
                         .path("/")
-                        .same_site(if *PROD { SameSite::Lax } else { SameSite::None }),
+                        .same_site(if *PROD { SameSite::Lax } else { SameSite::None })
+                        .secure(true)
+                        .http_only(true)
+                        .expires(OffsetDateTime::now_utc().saturating_add(Duration::days(7))),
                 );
 
                 tracing::info!("Successfully sent cookie to user: {}", user.email);

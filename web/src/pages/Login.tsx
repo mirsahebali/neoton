@@ -1,16 +1,14 @@
 import { action, useNavigate, useSubmission } from "@solidjs/router";
 import { createEffect, createSignal } from "solid-js";
 import toast from "solid-toast";
+import { to } from "../utils";
 
 const handleFormSumbit = async (formData: FormData) => {
-  const res = await fetch("/api/auth/login", {
+  const res = await fetch(to("/api/auth/login"), {
     method: "post",
     body: formData,
+    credentials: import.meta.env.PROD ? "same-origin" : "include",
   });
-
-  for (const pair of res.headers.entries()) {
-    console.log("%s: %s", pair[0], pair[1]);
-  }
 
   const data: {
     status: number;
@@ -56,9 +54,11 @@ export default function Login() {
       >
         <h1 class="text-2xl text-center font-bold "> Log in to Neoton</h1>
         <div class="">
-          <label class="input validator ">
+          <label class="input validator " for="email">
             <EmailIcon />
             <input
+              id="email"
+              autocomplete="on"
               name="email"
               type="email"
               placeholder="mail@site.com"
@@ -70,9 +70,11 @@ export default function Login() {
         </div>
 
         <div class="">
-          <label class="input validator ">
+          <label class="input validator " for="password">
             <KeyIcon />
             <input
+              id="password"
+              autocomplete="on"
               type={passwordVisibility() ? "text" : "password"}
               name="password"
               placeholder="Password"
@@ -95,6 +97,7 @@ export default function Login() {
 
         <div class="flex items-center justify-center gap-2">
           <input
+            id="visibility"
             type="checkbox"
             name="visbility"
             onchange={() => {

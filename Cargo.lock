@@ -1657,6 +1657,7 @@ dependencies = [
  "bcrypt",
  "chrono",
  "clap",
+ "cookie",
  "dotenvy",
  "jsonwebtoken",
  "lettre",

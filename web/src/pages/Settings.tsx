@@ -10,7 +10,7 @@ export default function Settings() {
             Username: @{currentUser.username}
           </li>
           <li class="list-item btn w-full btn-info text-center">
-            Email: @{currentUser.email}
+            Email: {currentUser.email}
           </li>
         </ul>
       </div>

@@ -14,7 +14,7 @@ import {
   Show,
 } from "solid-js";
 import { useLocation } from "@solidjs/router";
-import { socket } from "../socket";
+import { rootSocket } from "../socket";
 import { createStore } from "solid-js/store";
 import { UserContext } from "../contexts";
 import { getContacts, getInvites, getRequests, getUser } from "../requests";
@@ -25,7 +25,7 @@ export default function ChatsLayout(props: ParentProps) {
   const [currentUser, setCurrentUser] = createStore<UserStoreInfo>({
     username: "",
     email: "",
-    id: "",
+    id: NaN,
     invites: [],
     contacts: [],
     requests: [],
@@ -104,10 +104,10 @@ export default function ChatsLayout(props: ParentProps) {
     }
   });
 
-  socket.on(`error for ${user()?.username}`, (data) => {
+  rootSocket.on(`error:${user()?.username}`, (data) => {
     if (data.message) {
-      console.error(data);
-      toast.error("User not found");
+      console.error("ERROR message");
+      toast.error(String(data.message || "Unknown error occoured"));
     }
   });
 
