@@ -1,22 +1,23 @@
 import { createEffect, createSignal, onCleanup } from "solid-js";
 import toast from "solid-toast";
 import { acceptInvite, refetchSetUserStore } from "../utils";
-import { SetStoreFunction } from "solid-js/store";
-import {
-  RefetchContacts,
-  RefetchInvites,
-  RefetchRequests,
-  UserStoreInfo,
-} from "../types";
+import { CurrentUserStore, UserInfo } from "../types";
 
 export function InvitationToast(
   senderUsername: string,
-  currentUsername: string,
-  setCurrentUser: SetStoreFunction<UserStoreInfo>,
-  refetchContacts: RefetchContacts,
-  refetchInvites: RefetchInvites,
-  refetchRequests: RefetchRequests,
+  currentUserStoreContext: CurrentUserStore,
 ) {
+  const {
+    currentUser,
+    setCurrentUser,
+    refetchContacts,
+    mutateContacts,
+    refetchInvites,
+    mutateInvites,
+    refetchRequests,
+    mutateRequests: _mutateRequests,
+  } = currentUserStoreContext;
+
   // Toast with a countdown timer
   const duration = 7000;
   toast.custom(
@@ -49,7 +50,21 @@ export function InvitationToast(
               <button
                 class="btn btn-info"
                 onClick={async () => {
-                  acceptInvite(senderUsername, currentUsername);
+                  acceptInvite(senderUsername, currentUser);
+                  let dummyContact: UserInfo = {
+                    email: "",
+                    username: senderUsername,
+                    id: NaN,
+                  };
+                  mutateInvites((invites: UserInfo[]) =>
+                    invites.filter((ivt) => ivt.username != senderUsername),
+                  );
+
+                  mutateContacts((contacts: UserInfo[]) => [
+                    ...contacts,
+                    dummyContact,
+                  ]);
+
                   await refetchSetUserStore(
                     setCurrentUser,
                     refetchContacts,

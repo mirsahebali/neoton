@@ -1,9 +1,10 @@
 import { SetStoreFunction } from "solid-js/store";
-import { invitationSocket, rootSocket } from "./socket";
+import { invitationSocket, rootSocket as _rootSocket } from "./socket";
 import {
   RefetchContacts,
   RefetchInvites,
   RefetchRequests,
+  UserInfo,
   UserStoreInfo,
 } from "./types";
 
@@ -17,14 +18,29 @@ export const dbg = <T>(val: T): T => {
   return val;
 };
 
+/// function which awaits the execution for a set duration in millliseconds
 export async function sleep(duration: number) {
   await new Promise((res) => setTimeout(res, duration));
 }
 
-export function acceptInvite(senderUsername: string, currentUsername: string) {
-  let data = [currentUsername, senderUsername];
+export interface AcceptInviteData {
+  current: { username: string; id: number };
+  sender_username: string;
+}
+
+export function acceptInvite(senderUsername: string, currentUser: UserInfo) {
+  let data: AcceptInviteData = {
+    current: { id: currentUser.id, username: currentUser.username },
+    sender_username: senderUsername,
+  };
+
   invitationSocket.emit("user:accept", data);
-  console.log("Accepting :", data[0], " -> ", data[1]);
+  console.log(
+    "Accepting :",
+    data.current.username,
+    " -> ",
+    data.sender_username,
+  );
 }
 
 export async function refetchSetUserStore(
@@ -33,19 +49,23 @@ export async function refetchSetUserStore(
   refetchInvites: RefetchInvites,
   refetchRequests: RefetchRequests,
 ) {
-  const contacts = await refetchContacts();
+  const [contacts, invites, requests] = await Promise.all([
+    refetchContacts(),
+    refetchInvites(),
+    refetchRequests(),
+  ]);
   if (contacts) {
     setCurrentUser("contacts", contacts);
   }
-  const invites = await refetchInvites();
   if (invites) {
     setCurrentUser("invites", invites);
   }
-  const requests = await refetchRequests();
   if (requests) {
     setCurrentUser("requests", requests);
   }
 }
+
+export async function optimisticStoreUpdate() {}
 
 export function isMobile() {
   return window.innerWidth < 420;

@@ -16,7 +16,7 @@ import {
 import { useLocation } from "@solidjs/router";
 import { rootSocket } from "../socket";
 import { createStore } from "solid-js/store";
-import { UserContext } from "../contexts";
+import { ResourceContext, UserContext } from "../contexts";
 import { getContacts, getInvites, getRequests, getUser } from "../requests";
 import ListenerWrapper from "./ListenersWrapper";
 import { UserStoreInfo } from "../types";
@@ -40,12 +40,12 @@ export default function ChatsLayout(props: ParentProps) {
   // gets the current user
   const [user] = createResource(getUser);
 
-  const [contacts, { refetch: refetchContacts }] = createResource(getContacts);
-  const [invites, { refetch: refetchInvites }] = createResource(getInvites);
-  const [requests, { refetch: refetchRequests }] = createResource(getRequests);
-  const [contactLoadingToast, setContactLoadingToast] = createSignal("");
-  const [invitesLoadingToast, setInvitesLoadingToast] = createSignal("");
-  const [requestsLoadingToast, setRequestsLoadingToast] = createSignal("");
+  const [contacts, { refetch: refetchContacts, mutate: mutateContacts }] =
+    createResource(getContacts);
+  const [invites, { refetch: refetchInvites, mutate: mutateInvites }] =
+    createResource(getInvites);
+  const [requests, { refetch: refetchRequests, mutate: mutateRequests }] =
+    createResource(getRequests);
 
   createEffect(() => {
     console.log("Current User id", currentUser.id);
@@ -54,10 +54,6 @@ export default function ChatsLayout(props: ParentProps) {
   });
 
   createEffect(() => {
-    if (contacts.loading)
-      setContactLoadingToast(toast.loading("Loading contacts...."));
-    else toast.dismiss(contactLoadingToast());
-
     if (contacts()) {
       // @ts-ignore
       setCurrentUser("contacts", contacts());
@@ -65,11 +61,6 @@ export default function ChatsLayout(props: ParentProps) {
   });
 
   createEffect(() => {
-    if (invites.loading)
-      setInvitesLoadingToast(toast.loading("Loading invites...."));
-    else toast.dismiss(invitesLoadingToast());
-
-    console.log(invites());
     if (invites()) {
       // @ts-ignore
       setCurrentUser("invites", invites());
@@ -77,10 +68,6 @@ export default function ChatsLayout(props: ParentProps) {
   });
 
   createEffect(() => {
-    if (requests.loading)
-      setRequestsLoadingToast(toast.loading("Loading requests...."));
-    else toast.dismiss(requestsLoadingToast());
-
     if (requests()) {
       // @ts-ignore
       setCurrentUser("requests", requests());
@@ -135,22 +122,27 @@ export default function ChatsLayout(props: ParentProps) {
         refetchContacts,
         refetchInvites,
         refetchRequests,
+        mutateContacts,
+        mutateInvites,
+        mutateRequests,
       }}
     >
-      <ListenerWrapper>
-        <main>
-          <Header />
-          <div class="h-full"> {props.children}</div>
+      <ResourceContext.Provider value={{ contacts, invites, requests }}>
+        <ListenerWrapper>
+          <main>
+            <Header />
+            <div class="h-full"> {props.children}</div>
 
-          <Show when={currentUser.displayFooter}>
-            <footer class="fixed bottom-0 w-full text-neutral-content p-10">
-              <ChatDock selected={pathname()} />
-            </footer>
-          </Show>
-        </main>
+            <Show when={currentUser.displayFooter}>
+              <footer class="fixed bottom-0 w-full text-neutral-content p-10">
+                <ChatDock selected={pathname()} />
+              </footer>
+            </Show>
+          </main>
 
-        <Toaster />
-      </ListenerWrapper>
+          <Toaster />
+        </ListenerWrapper>
+      </ResourceContext.Provider>
     </UserContext.Provider>
   );
 }

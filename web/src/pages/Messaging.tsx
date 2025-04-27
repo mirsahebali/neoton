@@ -1,73 +1,91 @@
 import { useParams } from "@solidjs/router";
 import { BsSend } from "solid-icons/bs";
-import { createEffect, createResource, createSignal, For } from "solid-js";
-import { rootSocket } from "../socket";
+import {
+  createEffect,
+  createResource,
+  createSignal,
+  For,
+  on,
+  onCleanup,
+} from "solid-js";
+import { messagingSocket } from "../socket";
 import { useGetUser } from "../contexts";
 import { getMessagesOfContact } from "../requests";
 import "emoji-picker-element";
 
 import toast from "solid-toast";
 import _ from "lodash";
-import { Message } from "../types";
+import { MessageDataOut } from "../types";
 
 export default function Messaging() {
   const params = useParams();
-  const [messagesData, { refetch: refetchMessages }] = createResource(
+  const [messagesData, { refetch: refetchMessages, mutate }] = createResource(
     params.username,
     getMessagesOfContact,
   );
   const { currentUser } = useGetUser();
   const [message, setMessage] = createSignal("");
-  const [messages, setMessages] = createSignal<Message[]>([]);
 
   createEffect(() => {
     if (messagesData.error) {
       toast.error(messagesData.error);
     }
-    setMessages(messagesData() || []);
+    if (messagesData()) {
+      console.log(messagesData());
+    }
   });
 
   // socket.io event listener to get messages
   createEffect(() => {
-    const recieveEventName = `recieve-message:${currentUser.username}`;
+    const recieveEventName = `accept:${currentUser.username}`;
     console.log("Event name", recieveEventName);
-    rootSocket.on(recieveEventName, async ([_, content, senderId, sentAt]) => {
-      console.log("Tiggerred?");
-      await refetchMessages();
-      let currMessage = {
-        content,
-        sent_by: senderId,
-        recv_by: currentUser.username,
-        sent_at: sentAt,
-        id: -1,
-      };
-      setMessages((messages) => {
-        messages.push(currMessage);
-        return messages;
-      });
+    messagingSocket.on(recieveEventName, async (messageOut: MessageDataOut) => {
+      mutate((messages) => [...messages!, messageOut]);
     });
   });
+
+  const [container, setContainer] = createSignal<HTMLElement | undefined>();
 
   async function sendMessage(e: Event) {
     e.preventDefault();
     if (!message()) return;
-    rootSocket.emit("send-message", [
-      currentUser.username,
-      params.username,
-      message(),
-    ]);
-    await refetchMessages();
+    let currentMessage = {
+      content: message(),
+      sender_id: currentUser.id,
+      recv_username: params.username,
+    };
+
+    messagingSocket.emit("message:send", currentMessage);
+
+    let dummyMessageOut = {
+      ...currentMessage,
+      sent_at: new Date().toUTCString(),
+    } as MessageDataOut;
+
+    mutate((messages) => [...messages!, dummyMessageOut]);
     setMessage("");
   }
 
-  const [container, setContainer] = createSignal<HTMLElement | undefined>();
-  createEffect(() => {
-    messages();
-    const el = container();
-    if (el) {
-      el.scrollTop = el.scrollHeight;
-    }
+  createEffect(
+    on(
+      () => messagesData(),
+      (_data) => {
+        const el = container();
+        if (el) {
+          el.scrollTop = el.scrollHeight + 20;
+        }
+      },
+    ),
+  );
+
+  const timer = setInterval(async () => {
+    if (document.visibilityState === "visible") await refetchMessages();
+  }, 5000);
+
+  onCleanup(() => {
+    clearInterval(timer);
   });
+
   return (
     <div class="flex items-center  flex-col h-max ">
       <h1 class="fixed bg-base-200 py-2 w-full text-center z-20">
@@ -78,13 +96,16 @@ export default function Messaging() {
           ref={setContainer}
           class="overflow-y-scroll h-[80vh] my-10 py-5 lg:mx-32 lg:bg-neutral"
         >
-          <For each={messages() || []}>
+          <For
+            each={messagesData() || []}
+            fallback={<div> Start a conversation with {params.username}</div>}
+          >
             {(msg) => (
               <div
-                class={`chat ${msg.sent_by === currentUser.id ? "chat-end" : "chat-start"}`}
+                class={`chat ${msg.sender_id === currentUser.id ? "chat-end" : "chat-start"}`}
               >
                 <div
-                  class={`chat-bubble ${msg.sent_by === currentUser.id ? "chat-bubble-info" : "chat-bubble-accent"}`}
+                  class={`chat-bubble ${msg.sender_id === currentUser.id ? "chat-bubble-info" : "chat-bubble-accent"}`}
                 >
                   {msg.content}
                 </div>
@@ -124,12 +145,20 @@ export default function Messaging() {
             onchange={(e) => {
               setMessage(e.target.value);
             }}
+            onkeyup={async (event) => {
+              if (event.key === "Enter" || event.code === "Enter") {
+                await sendMessage(event);
+              }
+            }}
             class="input input-info text-lg"
           />
           <button
             class="btn btn-success"
-            onclick={async (e) => {
-              await sendMessage(e);
+            onclick={sendMessage}
+            onkeypress={async (event) => {
+              if (event.key === "Enter") {
+                await sendMessage(event);
+              }
             }}
           >
             <BsSend />

@@ -17,6 +17,9 @@ importers:
       '@ngneat/falso':
         specifier: ^7.3.0
         version: 7.3.0
+      '@solid-primitives/event-listener':
+        specifier: ^2.4.0
+        version: 2.4.0(solid-js@1.9.5)
       '@solid-primitives/scroll':
         specifier: ^2.1.0
         version: 2.1.0(solid-js@1.9.5)
@@ -56,6 +59,9 @@ importers:
       theme-change:
         specifier: ^2.5.0
         version: 2.5.0
+      valibot:
+        specifier: ^1.0.0
+        version: 1.0.0(typescript@5.7.3)
     devDependencies:
       '@playwright/test':
         specifier: ^1.51.1

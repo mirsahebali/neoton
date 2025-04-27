@@ -1,20 +1,22 @@
 import { createEffect, ParentProps } from "solid-js";
 import { InvitationToast } from "./CustomToasts";
 import { useGetUser } from "../contexts";
-import { invitationSocket } from "../socket";
+import { invitationSocket, messagingSocket } from "../socket";
 import toast from "solid-toast";
 import _ from "lodash";
-import { SocketSendInviteData, UserInfo } from "../types";
+import { MessageDataOut, SocketSendInviteData, UserInfo } from "../types";
 import { dbg } from "../utils";
 
 export default function ListenerWrapper(props: ParentProps) {
+  const currentUserStoreContext = useGetUser();
+
   const {
     currentUser,
-    refetchContacts,
-    refetchInvites,
-    refetchRequests,
     setCurrentUser,
-  } = useGetUser();
+    refetchContacts,
+    refetchRequests,
+    refetchInvites,
+  } = currentUserStoreContext;
 
   // Invitation listener
   createEffect(() => {
@@ -37,21 +39,29 @@ export default function ListenerWrapper(props: ParentProps) {
         invites.push(newInvite);
         return invites;
       });
-      InvitationToast(
-        data.sender.username,
-        currentUser.username,
-        setCurrentUser,
-        refetchContacts,
-        refetchInvites,
-        refetchRequests,
-      );
+      InvitationToast(data.sender.username, currentUserStoreContext);
     });
 
-    let errorEventName = `error:${currentUser.username}`;
+    eventName = `accepted:${currentUser.username}`;
+
+    invitationSocket.on(eventName, async (recvUsername) => {
+      toast.success(recvUsername + " accepted your invite");
+      await refetchContacts();
+      await refetchInvites();
+      await refetchRequests();
+    });
+    let errorEventName = `error:${currentUserStoreContext.currentUser.username}`;
 
     invitationSocket.on(errorEventName, (data) => {
       toast.error(data);
     });
+
+    messagingSocket.on(
+      `notify:${currentUser.username}`,
+      (_data: MessageDataOut) => {
+        //
+      },
+    );
   });
   return <>{props.children}</>;
 }

@@ -23,6 +23,30 @@ export interface Chat {
   lastMessage: string;
 }
 
+type Time = number;
+
+export enum MessageType {
+  text,
+  file,
+  link,
+  // We can send and set event timers from the app
+  timer,
+  // User contact, for contact sharing
+  user,
+}
+
+export interface MessageDataIn {
+  sender_id: number;
+  recv_username: string;
+  content: string;
+}
+
+export interface MessageDataOut extends MessageDataIn {
+  // TODO: add message type stuff later
+  //  message_type: MessageType,
+  sent_at: string;
+}
+
 export interface ContactMessages {
   user: UserInfo;
   messages: Message[] | null;
@@ -32,8 +56,8 @@ export interface Message {
   id: number | string;
   content: string;
   sent_at: number | string;
-  sent_by: number | string;
-  recv_by: number | string;
+  sender_id: number | string;
+  recv_id: number | string;
 }
 
 export interface CurrentUserStore {
@@ -42,7 +66,14 @@ export interface CurrentUserStore {
   refetchContacts: RefetchContacts;
   refetchInvites: RefetchInvites;
   refetchRequests: RefetchRequests;
+  mutateContacts: MutateContacts;
+  mutateInvites: MutateInvites;
+  mutateRequests: MutateRequests;
 }
+
+export type MutateContacts = Setter<UserInfo[] | undefined>;
+export type MutateInvites = Setter<UserInfo[] | undefined>;
+export type MutateRequests = Setter<UserInfo[] | undefined>;
 
 export type RefetchContacts = (
   info?: unknown,

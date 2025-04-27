@@ -1,5 +1,5 @@
 import { createEffect, For } from "solid-js";
-import { useGetUser } from "../contexts";
+import { useGetUser, useResourceState } from "../contexts";
 import InviteUser from "../components/InviteUser";
 import {
   AiOutlineCheck,
@@ -11,6 +11,7 @@ import { rootSocket } from "../socket";
 import toast from "solid-toast";
 import _ from "lodash";
 import { acceptInvite, refetchSetUserStore } from "../utils";
+import { FaSolidArrowRotateRight } from "solid-icons/fa";
 
 export default function Contacts() {
   const {
@@ -21,19 +22,35 @@ export default function Contacts() {
     refetchRequests,
   } = useGetUser();
 
+  const { contacts, invites, requests } = useResourceState();
+
   createEffect(() => {
-    rootSocket.on(`accept-success:${currentUser.username}`, (recvUsername) => {
-      toast.success(recvUsername + " accepted your invite");
-      refetchContacts();
-      refetchInvites();
-      refetchRequests();
-    });
+    rootSocket.on(
+      `accept-success:${currentUser.username}`,
+      async (recvUsername) => {
+        toast.success("@" + recvUsername + " accepted your invite");
+        await refetchContacts();
+        await refetchInvites();
+        await refetchRequests();
+      },
+    );
   });
 
   return (
     <div class="flex flex-col">
       <div class="text-center m-5">
-        <h1 class="divider text-xl font-semibold">Invites</h1>
+        <h1 class="divider text-xl font-semibold">
+          Invites
+          <FaSolidArrowRotateRight
+            onClick={async () => {
+              await refetchInvites();
+            }}
+            class={
+              (invites.loading ? "animate-spin" : "") +
+              "hover:scale-110 duration-300"
+            }
+          />
+        </h1>
         <ul class="list bg-base-100 rounded-box shadow-md">
           <For
             each={
@@ -53,7 +70,7 @@ export default function Contacts() {
                 <div class="flex gap-4">
                   <button
                     onClick={async () => {
-                      acceptInvite(invite.username, currentUser.username);
+                      acceptInvite(invite.username, currentUser);
                       await refetchSetUserStore(
                         setCurrentUser,
                         refetchContacts,
@@ -68,6 +85,9 @@ export default function Contacts() {
                   </button>
                   <button
                     id="delete-invite"
+                    onclick={async () => {
+                      // TODO: delete invite function. does not need to be realtime
+                    }}
                     class="btn btn-circle btn-error text-xl font-bold"
                   >
                     <ImCross />
@@ -79,7 +99,18 @@ export default function Contacts() {
         </ul>
       </div>
       <div class="text-center m-5">
-        <h1 class="divider text-xl font-semibold">Requests</h1>
+        <h1 class="divider text-xl font-semibold">
+          Requests
+          <FaSolidArrowRotateRight
+            onClick={async () => {
+              await refetchRequests();
+            }}
+            class={
+              (requests.loading ? "animate-spin" : "") +
+              "hover:scale-110 duration-300"
+            }
+          />
+        </h1>
 
         <ul class="list bg-base-100 rounded-box shadow-md mb-5">
           <For
@@ -99,11 +130,23 @@ export default function Contacts() {
               </li>
             )}
           </For>
+          {contacts.loading && <li>Loading....</li>}
         </ul>
         <InviteUser />
       </div>
       <div class="text-center m-5">
-        <h1 class="divider text-xl font-semibold">Contacts</h1>
+        <h1 class="divider text-xl font-semibold">
+          Contacts
+          <FaSolidArrowRotateRight
+            onClick={async () => {
+              await refetchContacts();
+            }}
+            class={
+              (contacts.loading ? "animate-spin" : "") +
+              "hover:scale-110 duration-300"
+            }
+          />
+        </h1>
 
         <ul class="list bg-base-100 rounded-box shadow-md">
           <For

@@ -2,7 +2,7 @@ import { createAsync, useNavigate } from "@solidjs/router";
 import { sleep, to } from "./utils";
 import { createEffect } from "solid-js";
 import toast from "solid-toast";
-import { Chat, Message, UserInfo } from "./types";
+import { Chat, MessageDataOut, UserInfo } from "./types";
 import axios from "axios";
 
 export const instance = axios.create({
@@ -141,7 +141,7 @@ export const getRequests = async (): Promise<UserInfo[] | undefined> => {
 
 export const getMessagesOfContact = async (
   username: string,
-): Promise<Message[] | undefined> => {
+): Promise<MessageDataOut[] | undefined> => {
   const res = await fetch(to("/api/db/user/messages/" + username), {
     method: "get",
     credentials: import.meta.env.PROD ? "same-origin" : "include",

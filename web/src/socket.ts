@@ -6,3 +6,7 @@ export const rootSocket = io(
 export const invitationSocket = io(
   (import.meta.env.PROD ? "" : "http://localhost:8080") + "/invitation",
 );
+
+export const messagingSocket = io(
+  (import.meta.env.PROD ? "" : "http://localhost:8080") + "/message",
+);
