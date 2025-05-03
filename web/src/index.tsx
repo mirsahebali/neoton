@@ -17,6 +17,7 @@ import ChatsLayout from "./components/ChatsLayout.jsx";
 import Calls from "./pages/Calls.jsx";
 import Settings from "./pages/Settings.jsx";
 import Messaging from "./pages/Messaging.jsx";
+import TestPage from "./pages/TestPage.jsx";
 
 const root = document.getElementById("root");
 
@@ -26,6 +27,7 @@ onMount(() => themeChange());
 render(
   () => (
     <Router>
+      <Route path="/test-stuff" component={TestPage} />
       <Route path="/" component={HomeLayout}>
         <Route path="/" component={App} />
         <Route path="/about" component={About} />

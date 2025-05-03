@@ -10,3 +10,8 @@ export const invitationSocket = io(
 export const messagingSocket = io(
   (import.meta.env.PROD ? "" : "http://localhost:8080") + "/message",
 );
+
+
+export const callSocket = io(
+  (import.meta.env.PROD ? "" : "http://localhost:8080") + "/call",
+);

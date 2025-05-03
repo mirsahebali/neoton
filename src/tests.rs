@@ -1,6 +1,8 @@
+use chrono::Utc;
 use cookie::time::{Duration, OffsetDateTime};
 use lettre::{AsyncSmtpTransport, Tokio1Executor, transport::smtp::authentication::Credentials};
-use serde_json::Value;
+use redis::AsyncCommands;
+use serde_json::{Value, json};
 
 use crate::{
     PROD, SMTP_EMAIL_PASSWORD, SMTP_EMAIL_RELAY, SMTP_EMAIL_USERNAME,
@@ -41,16 +43,15 @@ async fn test_email_sending() {
             .build()
     };
 
-    assert!(
-        send_email_handler(
-            mailer,
-            &"fooname".to_string(),
-            &"podiji4845@mobilesm.com".to_string(),
-            &55555
-        )
-        .await
-        .is_ok()
+    let res = send_email_handler(
+        mailer,
+        &"fooname".to_string(),
+        &"podiji4845@mobilesm.com".to_string(),
+        &55555,
     )
+    .await;
+    dbg!(&res);
+    assert!(res.is_ok())
 }
 
 #[test]
@@ -80,6 +81,7 @@ fn test_date_time() {
     dbg!(OffsetDateTime::now_utc().unix_timestamp_nanos());
     dbg!(OffsetDateTime::now_utc().saturating_add(Duration::days(7)));
     dbg!(OffsetDateTime::now_utc().saturating_add(Duration::days(7)));
+    dbg!(json!(Utc::now()));
 }
 
 #[test]
@@ -94,6 +96,22 @@ fn test_json_value() {
     let val = serde_json::json!(data);
 
     dbg!(&val["sender"]);
+}
+
+#[tokio::test]
+async fn test_redis_valkey_connection() {
+    let client = redis::Client::open("redis://127.0.0.1:6379").unwrap();
+
+    let mut conn = client.get_multiplexed_async_connection().await.unwrap();
+
+    let _: () = conn.set("some_key", 99).await.unwrap();
+
+    let value = conn
+        .get::<String, i32>("some_key".to_string())
+        .await
+        .unwrap();
+
+    assert_eq!(value, 99);
 }
 
 #[test]

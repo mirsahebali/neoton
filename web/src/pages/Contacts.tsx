@@ -130,7 +130,7 @@ export default function Contacts() {
               </li>
             )}
           </For>
-          {contacts.loading && <li>Loading....</li>}
+          {requests.loading && <li>Loading....</li>}
         </ul>
         <InviteUser />
       </div>

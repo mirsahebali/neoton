@@ -6,6 +6,19 @@ export interface UserInfo {
   id: number;
 }
 
+
+export enum CALL_STATE {
+  IDLE,
+  INITIATED,
+  ACTIVE
+}
+
+export type CreateCallData = {
+  sender_username: string,
+  recv_username: string,
+  sdp: RTCSessionDescriptionInit
+}
+
 export interface UserStoreInfo extends UserInfo {
   contacts: UserInfo[];
   invites: UserInfo[];
@@ -14,6 +27,7 @@ export interface UserStoreInfo extends UserInfo {
   numberOfRequests: number;
   numberOfInvites: number;
   displayFooter: boolean;
+  rtcPeerConnection?: RTCPeerConnection
 }
 
 export interface Chat {
@@ -33,6 +47,12 @@ export enum MessageType {
   timer,
   // User contact, for contact sharing
   user,
+}
+
+export interface JoinCallData {
+  sender_username: string,
+  recv_username: string,
+  sdp?: RTCSessionDescriptionInit
 }
 
 export interface MessageDataIn {

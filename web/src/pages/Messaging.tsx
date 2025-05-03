@@ -7,6 +7,7 @@ import {
   For,
   on,
   onCleanup,
+  onMount,
 } from "solid-js";
 import { messagingSocket } from "../socket";
 import { useGetUser } from "../contexts";
@@ -38,8 +39,9 @@ export default function Messaging() {
   // socket.io event listener to get messages
   createEffect(() => {
     const recieveEventName = `accept:${currentUser.username}`;
-    console.log("Event name", recieveEventName);
+    console.log("Event name:", recieveEventName);
     messagingSocket.on(recieveEventName, async (messageOut: MessageDataOut) => {
+      console.log("triggered???")
       mutate((messages) => [...messages!, messageOut]);
     });
   });
@@ -77,6 +79,12 @@ export default function Messaging() {
       },
     ),
   );
+
+  onMount(() => {
+    document.addEventListener("visibilitychange", async () => {
+      if (document.visibilityState === "visible") await refetchMessages();
+    })
+  })
 
   const timer = setInterval(async () => {
     if (document.visibilityState === "visible") await refetchMessages();

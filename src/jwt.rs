@@ -3,7 +3,7 @@ use std::sync::LazyLock;
 use crate::{
     JWT_SECRET,
     models::User,
-    utils::{time_now_ms_with_exp, time_now_ns},
+    utils::{time_now_ms_with_7_day_exp, time_now_ns},
 };
 use jsonwebtoken::{DecodingKey, EncodingKey, Header, Validation, decode, encode};
 use serde::{Deserialize, Serialize};
@@ -36,7 +36,7 @@ pub struct UserClaims {
 
 impl UserClaims {
     pub fn new(user: &User) -> Self {
-        let (iat, exp) = time_now_ms_with_exp();
+        let (iat, exp) = time_now_ms_with_7_day_exp();
 
         Self {
             username: user.username.clone(),

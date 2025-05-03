@@ -1,7 +1,7 @@
 use serde::{Deserialize, Serialize};
 use sqlx::{Pool, Postgres, prelude::FromRow};
 
-use crate::models::User;
+use crate::models::{Message, User};
 
 #[derive(Serialize, Deserialize, Debug)]
 pub enum GetUserBy {
@@ -14,7 +14,17 @@ pub struct SelectUser {
     pub id: i32,
     pub username: String,
     pub email: String,
-    pub profile_image: String,
+    pub profile_image: Option<String>,
+}
+
+pub async fn get_id_user_db(
+    conn: &Pool<Postgres>,
+    username: &String,
+) -> Result<(i32,), sqlx::Error> {
+    sqlx::query_as("SELECT id FROM users WHERE username = $1 LIMIT 1")
+        .bind(username)
+        .fetch_one(conn)
+        .await
 }
 
 pub async fn get_one_user_by_username(
@@ -50,7 +60,7 @@ pub async fn get_user_invites(
             FROM users 
             JOIN contacts 
             ON users.id = contacts.recv_id 
-            WHERE contacts.request_accepted = false AND contacts.recv_id = $1
+            WHERE contacts.request_accepted = false AND (users.id <> $1)
             LIMIT 5
             "#,
     )
@@ -70,7 +80,7 @@ pub async fn get_user_requests(
             FROM users 
             JOIN contacts 
             ON users.id = contacts.sender_id 
-            WHERE contacts.request_accepted = false AND contacts.sender_id = $1
+            WHERE contacts.request_accepted = false AND (users.id <> $1)
             LIMIT 5
             "#,
     )
@@ -89,22 +99,35 @@ pub async fn get_user_contacts(
             SELECT users.id, email, username, profile_image 
             FROM users 
             JOIN contacts 
-            ON users.id = contacts.recv_id 
+            ON (users.id = contacts.recv_id OR users.id = contacts.sender_id) 
             WHERE 
-            contacts.request_accepted = true 
-            UNION
-            SELECT users.id, email, username, profile_image  
-            FROM users 
-            JOIN contacts 
-            ON users.id = contacts.sender_id
-            WHERE 
-            contacts.request_accepted = true 
-            AND 
-            users.id = $1
+            (contacts.request_accepted = true AND users.id <> $1)
+            AND
+            (contacts.sender_id = $1 OR contacts.recv_id = $1)
             LIMIT 5
             "#,
     )
     .bind(user_id)
+    .fetch_all(conn)
+    .await
+}
+
+pub async fn get_messages_db(
+    conn: &Pool<Postgres>,
+    user_1: i32,
+    user_2: i32,
+) -> Result<Vec<Message>, sqlx::Error> {
+    sqlx::query_as(
+        " 
+        SELECT * FROM messages
+        WHERE
+        (messages.sender_id = $1 OR messages.recv_id = $1)
+        AND 
+        (messages.sender_id = $2 OR messages.recv_id = $2)
+        ",
+    )
+    .bind(user_1)
+    .bind(user_2)
     .fetch_all(conn)
     .await
 }

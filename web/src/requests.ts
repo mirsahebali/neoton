@@ -11,6 +11,9 @@ export const instance = axios.create({
   withCredentials: true,
 });
 
+export const checkBackendConn = async () => {
+}
+
 export const checkSessionRequest = (
   failedRoute: string,
   passedRoute: string | null,

@@ -1,5 +1,3 @@
-use std::time::{SystemTime, UNIX_EPOCH};
-
 use crate::SALT_ROUNDS;
 use bcrypt::{hash, verify};
 use cookie::time::{Duration, OffsetDateTime};
@@ -26,8 +24,14 @@ pub fn time_now_ns() -> i128 {
     OffsetDateTime::now_utc().unix_timestamp_nanos()
 }
 
+pub fn time_now_ms_with_exp(exp_duration: Duration) -> i128 {
+    let offset_now_time = OffsetDateTime::now_utc();
+    let exp = offset_now_time.saturating_add(exp_duration);
+    exp.unix_timestamp_nanos()
+}
+
 /// Returns the current unix time with 7 day expiration offset in nanoseconds
-pub fn time_now_ms_with_exp() -> (i128, i128) {
+pub fn time_now_ms_with_7_day_exp() -> (i128, i128) {
     let offset_now_time = OffsetDateTime::now_utc();
     let now_time_ns = offset_now_time.unix_timestamp_nanos();
     let exp = offset_now_time.saturating_add(Duration::days(7));

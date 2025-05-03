@@ -1,11 +1,11 @@
 import { createEffect, ParentProps } from "solid-js";
-import { InvitationToast } from "./CustomToasts";
+import { CallingToast, InvitationToast } from "./CustomToasts";
 import { useGetUser } from "../contexts";
-import { invitationSocket, messagingSocket } from "../socket";
+import { callSocket, invitationSocket, messagingSocket } from "../socket";
 import toast from "solid-toast";
 import _ from "lodash";
 import { MessageDataOut, SocketSendInviteData, UserInfo } from "../types";
-import { dbg } from "../utils";
+import { dbg, ICE_SERVERS } from "../utils";
 
 export default function ListenerWrapper(props: ParentProps) {
   const currentUserStoreContext = useGetUser();
@@ -16,6 +16,8 @@ export default function ListenerWrapper(props: ParentProps) {
     refetchContacts,
     refetchRequests,
     refetchInvites,
+
+
   } = currentUserStoreContext;
 
   // Invitation listener
@@ -62,6 +64,12 @@ export default function ListenerWrapper(props: ParentProps) {
         //
       },
     );
+    callSocket.on(
+      `invite:video:${currentUser.username}`,
+      (data: { sender_username: string, room_id: string }) => {
+        CallingToast(data.sender_username, currentUserStoreContext)
+      })
   });
+
   return <>{props.children}</>;
 }

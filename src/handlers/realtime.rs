@@ -1,8 +1,8 @@
 use crate::{
     AppState,
     db::{
-        mutations::add_user_invite,
-        queries::{GetUserBy, get_one_user_by_username},
+        mutations::{accept_user_invite_db, add_user_invite},
+        queries::{GetUserBy, get_id_user_db, get_one_user_by_username},
     },
 };
 use serde::{Deserialize, Serialize};
@@ -10,6 +10,9 @@ use socketioxide::{
     extract::{AckSender, Data, SocketRef, State},
     handler::Value,
 };
+use tracing::{error, info};
+
+type Error = sqlx::Error;
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct InviteUserData {
@@ -109,28 +112,57 @@ fn get_user_db_error(err: sqlx::Error) -> (String, InviteError) {
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct AcceptUserData {
-    /// the user which sent the request
-    sender_username: String,
-    /// the user which accepted the request
-    recv_username: String,
+    pub current: SenderData,
+    pub sender_username: String,
 }
 
 pub async fn accept_user_invite(
     s: SocketRef,
-    Data(data): Data<Vec<String>>,
-    pool: State<AppState>,
+    Data(data): Data<AcceptUserData>,
+    State(app_state): State<AppState>,
 ) {
-    tracing::info!("accepted: {} - {}", data[0], data[1]);
-}
+    let AcceptUserData {
+        current,
+        sender_username,
+    } = dbg!(data);
 
-#[derive(Debug, Serialize, Deserialize)]
-pub struct MessageData {
-    /// the user which sent the request
-    sender_username: String,
-    /// the user which accepted the request
-    recv_username: String,
-}
+    match get_id_user_db(&app_state.pool, &sender_username).await {
+        Ok((sender_id,)) => {
+            dbg!("sender id ", sender_id, "recv id", &current.id);
 
-pub async fn message_user(s: SocketRef, Data(data): Data<Vec<String>>, pool: State<AppState>) {
-    tracing::info!("accepted: {} - {}", data[0], data[1]);
+            let error_event_name = format!("error:{}", &current.username);
+            if let Err(err) = accept_user_invite_db(&app_state.pool, current.id, sender_id).await {
+                error!("ERROR accepting user invite in db: {err}");
+                let _ = s
+                    .broadcast()
+                    .emit(&error_event_name, "Error accepting user request")
+                    .await
+                    .map_err(|err| error!("ERROR emitting event: {error_event_name}: {err}"));
+                return;
+            }
+            let event_name = format!("accepted:{sender_username}");
+            let _ = s
+                .broadcast()
+                .emit(&event_name, &current.username)
+                .await
+                .map_err(|err| error!("ERROR emitting event: {event_name}, {err}"));
+        }
+        Err(err) => {
+            error!("Error getting user: {err}");
+            let error_event_name = format!("error:{}", &current.username);
+            if let Error::RowNotFound = err {
+                let _ = s
+                    .broadcast()
+                    .emit(&error_event_name, "User not found")
+                    .await
+                    .map_err(|err| error!("ERROR emitting event: {error_event_name}: {err}"));
+            } else {
+                let _ = s
+                    .broadcast()
+                    .emit(&error_event_name, "Internal Server Error")
+                    .await
+                    .map_err(|err| error!("ERROR emitting event: {error_event_name}: {err}"));
+            }
+        }
+    };
 }

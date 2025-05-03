@@ -9,8 +9,12 @@ use axum::{
 };
 use clap::Parser;
 use neoton::{
-    AppState, PROD, get_connection_pool,
-    handlers::realtime::{accept_user_invite, invite_user},
+    AppState, PROD, get_connection_pool, get_valkey_conn,
+    handlers::{
+        calls::{create_video_call, hangup_video_call, join_video_call},
+        messaging::send_message,
+        realtime::{accept_user_invite, invite_user},
+    },
     middlewares::auth::ensure_authenticated,
     routes::{
         ReturningResponse,
@@ -23,7 +27,7 @@ use neoton::{
 };
 use serde::Serialize;
 
-use socketioxide::extract::SocketRef;
+use socketioxide::{ParserConfig, extract::SocketRef};
 use tower_http::{
     cors::CorsLayer,
     services::{ServeDir, ServeFile},
@@ -49,13 +53,19 @@ async fn main() -> anyhow::Result<()> {
             tracing_subscriber::EnvFilter::try_from_default_env()
                 .unwrap_or_else(|_| format!("{}=debug", env!("CARGO_CRATE_NAME")).into()),
         )
-        .with(tracing_subscriber::fmt::layer())
+        .with(
+            tracing_subscriber::fmt::layer()
+                .with_file(true)
+                .with_line_number(true),
+        )
         .init();
 
     dotenvy::dotenv()?;
 
-    let app_state = AppState::new(get_connection_pool().await);
+    let app_state = AppState::new(get_connection_pool().await, get_valkey_conn().await);
+
     let (socket_io_layer, io) = socketioxide::SocketIo::builder()
+        .with_parser(ParserConfig::msgpack())
         .with_state(app_state.clone())
         .build_layer();
 
@@ -73,6 +83,14 @@ async fn main() -> anyhow::Result<()> {
 
     io.ns("/message", |s: SocketRef| {
         tracing::info!("messaging socket connected");
+        s.on("message:send", send_message);
+    });
+
+    io.ns("/call", |s: SocketRef| {
+        tracing::info!("Calling socket connected");
+        s.on("invite:video", create_video_call);
+        s.on("join:video", join_video_call);
+        s.on("hangup:video", hangup_video_call)
     });
 
     let db_router = Router::new()
@@ -82,6 +100,7 @@ async fn main() -> anyhow::Result<()> {
         .route("/user/contacts", get(get_contacts))
         .route("/user/requests", get(get_requests))
         .route("/user/invites", get(get_invites))
+        .route("/user/messages/{username}", get(get_messages))
         .route_layer(from_fn_with_state(app_state.clone(), ensure_authenticated));
 
     // api router

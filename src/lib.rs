@@ -10,6 +10,7 @@ use axum::extract::FromRef;
 use axum_extra::extract::cookie::Key;
 use lettre::{AsyncSmtpTransport, Tokio1Executor, transport::smtp::authentication::Credentials};
 use otp::OTP;
+use redis::aio::MultiplexedConnection;
 use sqlx::{Pool, Postgres, postgres::PgPoolOptions};
 use tokio::sync::Mutex;
 
@@ -22,6 +23,9 @@ pub static SALT_ROUNDS: LazyLock<u32> = LazyLock::new(|| {
 
 pub static DATABASE_URL: LazyLock<String> =
     LazyLock::new(|| std::env::var("DATABASE_URL").expect("DATABASE_URL not set"));
+
+pub static VALKEY_URL: LazyLock<String> =
+    LazyLock::new(|| std::env::var("VALKEY_URL").expect("VALKEY_URL not set"));
 
 pub static JWT_SECRET: LazyLock<String> =
     LazyLock::new(|| std::env::var("JWT_SECRET").expect("JWT_SECRET not set"));
@@ -72,7 +76,7 @@ pub mod sql;
 pub struct AppState(Arc<InnerState>);
 
 impl AppState {
-    pub fn new(pool: Pool<Postgres>) -> Self {
+    pub fn new(pool: Pool<Postgres>, valkey_conn: MultiplexedConnection) -> Self {
         let creds = Credentials::new(
             SMTP_EMAIL_USERNAME.to_owned(),
             SMTP_EMAIL_PASSWORD.to_owned(),
@@ -92,8 +96,10 @@ impl AppState {
                 .port(1025)
                 .build()
         };
+
         AppState(Arc::new(InnerState {
             key: Key::from(COOKIE_KEY_SECRET.as_bytes()),
+            kv_pool: valkey_conn,
             pool,
             otp_map: Mutex::new(HashMap::new()),
             mailer,
@@ -116,6 +122,7 @@ impl FromRef<AppState> for Key {
 
 pub struct InnerState {
     pub pool: Pool<Postgres>,
+    pub kv_pool: MultiplexedConnection,
     pub key: Key,
     pub otp_map: Mutex<HashMap<String, OTP>>,
     pub mailer: AsyncSmtpTransport<Tokio1Executor>,
@@ -134,4 +141,14 @@ pub async fn get_connection_pool() -> Pool<Postgres> {
             panic!("Error getting pool")
         }
     }
+}
+
+pub async fn get_valkey_conn() -> MultiplexedConnection {
+    let client = redis::Client::open(VALKEY_URL.to_string())
+        .expect("TO have active connection to a valkey server");
+
+    client
+        .get_multiplexed_tokio_connection()
+        .await
+        .expect("To get multiplexed async connections")
 }
