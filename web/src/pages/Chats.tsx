@@ -1,6 +1,6 @@
 import { createEffect, createResource, For, Suspense } from "solid-js";
 import InviteUser from "../components/InviteUser";
-import { getChats  } from "../requests";
+import { getChats } from "../requests";
 import _ from "lodash";
 import { useGetUser } from "../contexts";
 

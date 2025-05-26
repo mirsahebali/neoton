@@ -1,7 +1,7 @@
-import { createEffect, createSignal, onCleanup } from "solid-js";
+import { createEffect, createSignal, onCleanup, Setter } from "solid-js";
 import toast from "solid-toast";
 import { acceptInvite, ICE_SERVERS, refetchSetUserStore } from "../utils";
-import { CurrentUserStore, JoinCallData, UserInfo } from "../types";
+import { CurrentUserStore, ResponseVideoData, UserInfo } from "../types";
 import { callSocket } from "../socket";
 
 export function InvitationToast(
@@ -104,16 +104,13 @@ export function InvitationToast(
   );
 }
 
-
 export function CallingToast(
   senderUsername: string,
   currentUserStoreContext: CurrentUserStore,
+  remoteStreamElementRef: () => HTMLVideoElement | undefined,
+  setRemoteStream: Setter<MediaStream | undefined>
 ) {
-
-  const {
-    currentUser,
-    setCurrentUser
-  } = currentUserStoreContext;
+  const { currentUser, setCurrentUser } = currentUserStoreContext;
 
   // Toast with a countdown timer
   const duration = 60000; // 60 secs
@@ -147,17 +144,46 @@ export function CallingToast(
                 id="accept-video-call"
                 class="btn btn-info"
                 onClick={async () => {
-                  setCurrentUser("rtcPeerConnection", new RTCPeerConnection(ICE_SERVERS))
-                  const sessionDescription = await currentUser.rtcPeerConnection?.createAnswer();
-                  await currentUser.rtcPeerConnection?.setLocalDescription(sessionDescription)
+                  async () => {
+                    setCurrentUser(
+                      "rtcPeerConnection",
+                      new RTCPeerConnection(ICE_SERVERS),
+                    );
 
-                  const data: JoinCallData = {
-                    recv_username: currentUser.username,
-                    sender_username: senderUsername,
-                    sdp: sessionDescription
-                  };
-                  callSocket.emit("join:video", data)
-                  toast.dismiss(t.id);
+
+                    currentUser.rtcPeerConnection!.onicecandidate = (event) => {
+                      if (event.candidate) {
+                        callSocket.emit("video:ice_candidate", {
+                          sender_username: senderUsername,
+                          recv_username: currentUser.username,
+                          label: event.candidate.sdpMLineIndex,
+                          candidate: event.candidate.candidate,
+                        });
+                      }
+                    };
+                    currentUser.rtcPeerConnection!.ontrack = (event) => {
+                      remoteStreamElementRef()!.srcObject = event.streams[0];
+                      setRemoteStream(event.streams[0])
+                    };
+
+
+                    let sessionDescription: RTCSessionDescriptionInit;
+                    try {
+                      sessionDescription =
+                        await currentUser.rtcPeerConnection!.createAnswer();
+                    } catch (e) {
+                      console.error(e);
+                      toast.error("ERROR creating answer");
+                      return;
+                    }
+                    const data: ResponseVideoData = {
+                      recv_username: currentUser.username,
+                      sender_username: senderUsername,
+                      accepted: true,
+                      sdp: sessionDescription
+                    };
+                    callSocket.emit("video:response", data);
+                  }
                 }}
               >
                 Accept
@@ -166,10 +192,16 @@ export function CallingToast(
                 id="decline-video-call"
                 class="btn btn-error"
                 onClick={async () => {
+                  const data: ResponseVideoData = {
+                    recv_username: currentUser.username,
+                    sender_username: senderUsername,
+                    accepted: false,
+                  };
+                  callSocket.emit("video:response", data);
                   toast.dismiss(t.id);
                 }}
               >
-                Ignore
+                Decline
               </button>
             </div>
           </div>

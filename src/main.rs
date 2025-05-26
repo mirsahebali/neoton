@@ -11,7 +11,7 @@ use clap::Parser;
 use neoton::{
     AppState, PROD, get_connection_pool, get_valkey_conn,
     handlers::{
-        calls::{create_video_call, hangup_video_call, join_video_call},
+        calls::{create_video_invite, respond_video_invite, send_ice_candidate},
         messaging::send_message,
         realtime::{accept_user_invite, invite_user},
     },
@@ -65,8 +65,8 @@ async fn main() -> anyhow::Result<()> {
     let app_state = AppState::new(get_connection_pool().await, get_valkey_conn().await);
 
     let (socket_io_layer, io) = socketioxide::SocketIo::builder()
-        .with_parser(ParserConfig::msgpack())
         .with_state(app_state.clone())
+        .with_parser(ParserConfig::msgpack())
         .build_layer();
 
     tracing::info!("Starting Main execution");
@@ -88,11 +88,12 @@ async fn main() -> anyhow::Result<()> {
 
     io.ns("/call", |s: SocketRef| {
         tracing::info!("Calling socket connected");
-        s.on("invite:video", create_video_call);
-        s.on("join:video", join_video_call);
-        s.on("hangup:video", hangup_video_call)
+        s.on("video:invite", create_video_invite);
+        s.on("video:response", respond_video_invite);
+        s.on("video:ice_candidate", send_ice_candidate);
     });
 
+    // database router
     let db_router = Router::new()
         .route("/user", get(get_user))
         .route("/health", get(async || "Should only get on valid token"))

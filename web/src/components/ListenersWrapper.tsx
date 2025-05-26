@@ -4,7 +4,12 @@ import { useGetUser } from "../contexts";
 import { callSocket, invitationSocket, messagingSocket } from "../socket";
 import toast from "solid-toast";
 import _ from "lodash";
-import { MessageDataOut, SocketSendInviteData, UserInfo } from "../types";
+import {
+  MessageDataOut,
+  ResponseVideoData,
+  SocketSendInviteData,
+  UserInfo,
+} from "../types";
 import { dbg, ICE_SERVERS } from "../utils";
 
 export default function ListenerWrapper(props: ParentProps) {
@@ -16,8 +21,6 @@ export default function ListenerWrapper(props: ParentProps) {
     refetchContacts,
     refetchRequests,
     refetchInvites,
-
-
   } = currentUserStoreContext;
 
   // Invitation listener
@@ -64,11 +67,6 @@ export default function ListenerWrapper(props: ParentProps) {
         //
       },
     );
-    callSocket.on(
-      `invite:video:${currentUser.username}`,
-      (data: { sender_username: string, room_id: string }) => {
-        CallingToast(data.sender_username, currentUserStoreContext)
-      })
   });
 
   return <>{props.children}</>;

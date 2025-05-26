@@ -10,6 +10,7 @@ import {
   createResource,
   createSignal,
   For,
+  onCleanup,
   ParentProps,
   Show,
 } from "solid-js";
@@ -26,6 +27,7 @@ export default function ChatsLayout(props: ParentProps) {
     username: "",
     email: "",
     id: NaN,
+    onCall: false,
     invites: [],
     contacts: [],
     requests: [],
@@ -112,6 +114,10 @@ export default function ChatsLayout(props: ParentProps) {
     setCurrentUser("displayFooter", pathRegex.test(currentPath()));
 
     console.log("Pathname", currentPath());
+  });
+
+  onCleanup(() => {
+    setCurrentUser("onCall", false);
   });
 
   return (

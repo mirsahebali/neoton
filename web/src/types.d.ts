@@ -6,18 +6,17 @@ export interface UserInfo {
   id: number;
 }
 
-
 export enum CALL_STATE {
   IDLE,
   INITIATED,
-  ACTIVE
+  ACTIVE,
 }
 
-export type CreateCallData = {
-  sender_username: string,
-  recv_username: string,
-  sdp: RTCSessionDescriptionInit
-}
+export type CreateVideoData = {
+  sender_username: string;
+  recv_username: string;
+  sdp: RTCSessionDescriptionInit;
+};
 
 export interface UserStoreInfo extends UserInfo {
   contacts: UserInfo[];
@@ -27,7 +26,8 @@ export interface UserStoreInfo extends UserInfo {
   numberOfRequests: number;
   numberOfInvites: number;
   displayFooter: boolean;
-  rtcPeerConnection?: RTCPeerConnection
+  onCall: boolean;
+  rtcPeerConnection?: RTCPeerConnection;
 }
 
 export interface Chat {
@@ -49,10 +49,11 @@ export enum MessageType {
   user,
 }
 
-export interface JoinCallData {
-  sender_username: string,
-  recv_username: string,
-  sdp?: RTCSessionDescriptionInit
+export interface ResponseVideoData {
+  sender_username: string;
+  recv_username?: string;
+  accepted: boolean;
+  sdp?: RTCSessionDescriptionInit;
 }
 
 export interface MessageDataIn {
@@ -119,3 +120,13 @@ export interface SocketSendInviteData {
   sender: { username: string; id: number };
   recv_username: string;
 }
+
+export interface InviteVideoData {
+  sender_username: string;
+  sdp: string;
+}
+
+// Cleans up the type with `T`
+export type Prettify<T> = {
+  [K in keyof T]: T[K];
+} & {};

@@ -15,6 +15,7 @@ const handleFormSumbit = async (formData: FormData) => {
     data: { enabled2fa: boolean; error: boolean; message: string };
   } = { status: res.status, data: await res.json() };
   console.log(data.data);
+
   return data;
 };
 const loginAction = action(handleFormSumbit, "loginUser");

@@ -1,208 +1,201 @@
-import { createEffect, createResource, createSignal, For, onCleanup, onMount } from "solid-js";
+import {
+  createEffect,
+  createResource,
+  createSignal,
+  For,
+  JSXElement,
+  onCleanup,
+  onMount,
+  ParentProps,
+  Setter,
+} from "solid-js";
 import toast from "solid-toast";
 import { createEventListener } from "@solid-primitives/event-listener";
-import { createPermission } from "@solid-primitives/permission"
-import { createStream } from "@solid-primitives/stream"
+import { createPermission } from "@solid-primitives/permission";
+import { createStream } from "@solid-primitives/stream";
 import { FaSolidArrowRotateRight, FaSolidVideo } from "solid-icons/fa";
-import { createCameras, createMicrophones } from "@solid-primitives/devices"
-import { callSocket, } from "../socket";
+import { createCameras, createMicrophones } from "@solid-primitives/devices";
+import { callSocket } from "../socket";
 import { useGetUser } from "../contexts";
-import { CreateCallData, JoinCallData } from "../types";
+import { CreateVideoData, InviteVideoData, ResponseVideoData } from "../types";
 import { getContacts } from "../requests";
 import { BiSolidPhoneCall } from "solid-icons/bi";
 import { createStore } from "solid-js/store";
+import { ICE_SERVERS } from "../utils";
+import { CallingToast } from "./CustomToasts";
 export enum CALL_STATE {
   IDLE,
   INITIATED,
-  ACTIVE
+  ACTIVE,
 }
 
 export default function WebRTCSetup() {
+  let currentUserStore = useGetUser();
+  let { currentUser, setCurrentUser } = currentUserStore;
+  let [contacts, { refetch: refetchContacts }] = createResource(getContacts);
 
-  let { currentUser } = useGetUser()
-  let [contacts, { refetch: refetchContacts }] = createResource(getContacts)
+  const microphonePermissions = createPermission("microphone");
+  const cameraPermissions = createPermission("camera");
 
-  const videoCameras = createCameras()
-  const microphones = createMicrophones()
+  const videoCameras = createCameras();
+  const microphones = createMicrophones();
 
-  const microphonePermissions = createPermission("microphone")
-  const cameraPermissions = createPermission("camera")
+  createEffect(() => {
+    console.log("Microphone permissions", microphonePermissions());
+    console.log("Camera Permissions", cameraPermissions());
+  });
 
-  const [foundDevice, setFoundDevice] = createSignal(false)
-  const [constraints, setConstraints] = createStore<MediaStreamConstraints>({})
+  const [foundDevice, setFoundDevice] = createSignal(false);
+  const [constraints, setConstraints] = createStore<MediaStreamConstraints>({});
   const [currCameraId, setCurrCameraId] = createSignal(
     localStorage.getItem("cameraPreferenceID") || "",
   );
 
   createEffect(() => {
+    console.log(videoCameras());
+    console.log(microphones());
     if (microphones().length > 0) {
-      setConstraints("audio", { deviceId: microphones()[0].deviceId })
-      setFoundDevice(true)
+      setConstraints("audio", { deviceId: microphones()[0].deviceId });
+      setFoundDevice(true);
     }
-
     if (videoCameras().length > 0) {
-      setConstraints("video", { deviceId: currCameraId() })
-      setFoundDevice(true)
+      setConstraints("video", { deviceId: videoCameras()[0].deviceId });
+      setFoundDevice(true);
     }
+  });
 
-  })
-
-  const [localStream, { mutate, stop }] = createStream(() => foundDevice() ? constraints : undefined)
-
-
-  const [remoteStream, setRemoteStream] = createSignal<MediaStream>()
-
-  const [CallState, setCallState] = createSignal<CALL_STATE>(CALL_STATE.IDLE)
-
-  const [ICE, setICE] = createSignal("")
-  const [input, setInput] = createSignal("")
-
-  const rtcConfig = {
-    iceServers: [
-      { urls: "stun:stun.l.google.com:19302" },
-      { urls: "stun:stun1.l.google.com:19302" },
-      { urls: "stun:stun2.l.google.com:19302" },
-      { urls: "stun:stun3.l.google.com:19302" },
-    ],
-  }
-
-  let connection = new RTCPeerConnection(rtcConfig)
-
-  connection.ontrack = event => {
-    setRemoteStream(event.streams[0])
-  }
-
-  connection.onicecandidate = () => {
-    setICE(JSON.stringify(connection.localDescription))
-  }
-
+  const [localStream] = createStream(() =>
+    foundDevice() ? constraints : undefined,
+  );
 
   createEffect(() => {
-    const stream = localStream()
-    if (!stream) return
-
-    stream.getTracks().forEach(track => connection.addTrack(track, stream))
-  })
-
-  const startCall = async (recv_username: string) => {
-    if (!localStream() || connection.localDescription !== null) return
-
-    setCallState(CALL_STATE.INITIATED)
-    const sessionDescription = await connection.createOffer()
-    await connection.setLocalDescription(sessionDescription)
-
-    const inviteData: CreateCallData = {
-      sender_username: currentUser.username,
-      recv_username,
-      sdp: sessionDescription
-    };
-
-    callSocket.emit("invite:video", inviteData)
-  }
-
-  const answerCall = async () => {
-    if (!localStream() || connection.localDescription !== null) return
-    setCallState(CALL_STATE.ACTIVE)
-
-    let remoteOffer = JSON.parse(input())
-    connection.setRemoteDescription(remoteOffer)
-    const answer = await connection.createAnswer()
-
-    await connection.setLocalDescription(answer)
-  }
-
-  const addRemote = async () => {
-    let remoteAnswer = JSON.parse(input())
-    if (connection.remoteDescription === null) {
-      await connection.setRemoteDescription(remoteAnswer)
-    } else {
-      await connection.addIceCandidate(remoteAnswer)
+    if (localStream.loading) {
+      toast.loading("Loading streams...", { duration: 200 });
     }
-  }
+    localStreamElementRef()!.srcObject = localStream() as MediaProvider;
+  });
 
-  const toggleAudio = () => {
-    mutate(s => {
-      s?.getAudioTracks().forEach(track => track.enabled = !track.enabled)
-      return s;
-    })
-  }
-
-  const toggleVideo = () => {
-    mutate(s => {
-      s?.getVideoTracks().forEach(track => track.enabled = !track.enabled)
-      return s
-    })
-  }
-
-  const endCall = () => {
-    connection.close()
-    stop()
-    setCallState(CALL_STATE.IDLE)
-    setICE("")
-    setInput("")
-  }
+  const [remoteStream, setRemoteStream] = createSignal<MediaStream>();
 
   const [localStreamElementRef, setLocalStreamElementRef] = createSignal<
     HTMLVideoElement | undefined
   >();
-
   const [remoteStreamElementRef, setRemoteStreamElementRef] = createSignal<
     HTMLVideoElement | undefined
   >();
-  createEffect(() => {
-    const peers = new RTCPeerConnection();
+  const [callModalRef, setCallModalRef] = createSignal();
+  const [callingUsername, setCallingUsername] = createSignal("");
 
-    // let dataChannel = peer.createDataChannel("videoCallingChannel");
-    // dataChannel.send("Hello, Peer");
-  });
+  const [CallState, setCallState] = createSignal<CALL_STATE>(CALL_STATE.IDLE);
 
-  const [currentRoomId, setRoomId] = createSignal("")
-  const [senderUsername, setSenderUsername] = createSignal("")
+  const [ICE, setICE] = createSignal("");
 
+  const startCall = async (recv_username: string) => {
+    const stream = localStream();
+    if (!stream) {
+      toast.error("No local stream device found");
+      return;
+    }
 
-  createEffect(async () => {
-    if (localStream.loading)
-      toast.loading("Loading video stream...", { duration: 1000 });
+    setCurrentUser("rtcPeerConnection", new RTCPeerConnection(ICE_SERVERS));
 
-    if (localStream.error)
-      toast.error(
-        "ERROR getting video stream: " + localStream.error.toString(),
+    stream
+      .getTracks()
+      .forEach((track) =>
+        currentUser.rtcPeerConnection?.addTrack(track, stream),
       );
-    if (!localStreamElementRef) return;
-    if (!localStream()) return;
-    if (localStream() && localStream()!.id.length > 0)
-      if (localStreamElementRef())
-        // @ts-ignore
-        localStreamElementRef().srcObject = localStream();
-  });
 
+    currentUser.rtcPeerConnection!.ontrack = (event) => {
+      remoteStreamElementRef()!.srcObject = event.streams[0];
+      setRemoteStream(event.streams[0]);
+    };
 
-  onCleanup(() => {
-    localStream()?.getTracks().forEach(track => track.stop())
-  })
+    currentUser.rtcPeerConnection!.onicecandidate = (event) => {
+      setICE(JSON.stringify(currentUser.rtcPeerConnection!.localDescription));
+      if (event.candidate) {
+        callSocket.emit("video:ice_candidate", {
+          sender_username: currentUser.username,
+          recv_username,
+          label: event.candidate.sdpMLineIndex,
+          candidate: event.candidate.candidate,
+        });
+      }
+    };
 
+    if (
+      !localStream() ||
+      currentUser.rtcPeerConnection?.localDescription !== null
+    ) {
+      console.error("local description not set or local stream not present");
+      return;
+    }
+
+    setCallState(CALL_STATE.INITIATED);
+    let sessionDescription;
+    try {
+      sessionDescription = await currentUser.rtcPeerConnection.createOffer();
+    } catch (e) {
+      const err = e as Error;
+      toast.error("Error creating offer");
+      console.error(err);
+      return;
+    }
+
+    try {
+      await currentUser.rtcPeerConnection!.setLocalDescription(
+        sessionDescription,
+      );
+    } catch (e) {
+      const err = e as Error;
+      toast.error("Error setting local description");
+      console.error(err);
+      return;
+    }
+
+    const inviteData: CreateVideoData = {
+      sender_username: currentUser.username,
+      recv_username,
+      sdp: sessionDescription,
+    };
+
+    callSocket.emit("video:invite", inviteData);
+  };
+
+  async function answerCall(
+    sessionDescription: RTCLocalSessionDescriptionInit,
+  ) { }
 
   createEffect(() => {
+    callSocket.on(
+      `video:invite:${currentUser.username}`,
+      (data: InviteVideoData) => {
+        CallingToast(data.sender_username, currentUserStore, remoteStreamElementRef, setRemoteStream);
+      },
+    );
+  });
 
+  callSocket.on(
+    `video:response:${currentUser.username}`,
+    async (data: ResponseVideoData) => {
+      // reject call and close rtc connection
+      if (!data.accepted) {
+        currentUser.rtcPeerConnection?.close();
+        toast.error(data.recv_username + " declined call");
+        setCallState(CALL_STATE.IDLE);
+        return;
+      }
 
-    let eventName = `created:${currentUser.username}`;
-    console.log(eventName);
-    callSocket.on(eventName, (room_id: string) => {
-      console.log(room_id);
-
-      setRoomId(room_id)
-    })
-
-
-    console.log(currentRoomId());
-  })
-
+      toast.success(data.recv_username + " accepted call");
+      setCallState(CALL_STATE.IDLE);
+    },
+  );
 
   return (
     <div>
       <h1 class="text-xl font-bold text-center my-3">Calls</h1>
       <div class="resize p-5 overflow-auto border w-fit">
         <video
+          class="border"
           ref={setLocalStreamElementRef}
           id="local-steam"
           autoplay
@@ -213,6 +206,7 @@ export default function WebRTCSetup() {
         />
 
         <video
+          class="border"
           ref={setRemoteStreamElementRef}
           id="remote-steam"
           autoplay
@@ -220,13 +214,13 @@ export default function WebRTCSetup() {
           width={200}
           controls={false}
         />
-
       </div>
       <div class="flex flex-col">
         <select
           class="select"
           onchange={(e) => {
             localStorage.setItem("cameraPreferenceID", e.target.value);
+            setConstraints("video", { deviceId: e.target.value });
             setCurrCameraId(e.target.value);
           }}
         >
@@ -298,9 +292,9 @@ export default function WebRTCSetup() {
                 <div class="flex gap-4">
                   <button
                     id="video-contact"
-                    disabled={localStream() === undefined || CallState() > CALL_STATE.IDLE}
+                    disabled={CallState() !== CALL_STATE.IDLE}
                     onClick={async () => {
-                      await startCall(contact.username)
+                      await startCall(contact.username);
                     }}
                     class="btn btn-circle btn-error text-xl font-bold"
                   >
@@ -318,35 +312,83 @@ export default function WebRTCSetup() {
           </For>
         </ul>
       </div>
+      {/* Put this inside another component/function */}
+      <div>
+        <input
+          type="checkbox"
+          id="call-modal"
+          class="modal-toggle"
+          ref={setCallModalRef}
+        />
+        <div class="modal" role="dialog">
+          <div class="modal-box">
+            <h3 class="text-lg font-bold">Hello!</h3>
+            <p class="py-4">Getting a call from</p>
+            <p>{callingUsername()}</p>
+            <button
+              onclick={async () => {
+                setCurrentUser(
+                  "rtcPeerConnection",
+                  new RTCPeerConnection(ICE_SERVERS),
+                );
 
+
+                currentUser.rtcPeerConnection!.onicecandidate = (event) => {
+                  if (event.candidate) {
+                    callSocket.emit("video:ice_candidate", {
+                      sender_username: callingUsername(),
+                      recv_username: currentUser.username,
+                      label: event.candidate.sdpMLineIndex,
+                      candidate: event.candidate.candidate,
+                    });
+                  }
+                };
+                currentUser.rtcPeerConnection!.ontrack = (event) => {
+                  remoteStreamElementRef()!.srcObject = event.streams[0];
+                  setRemoteStream(event.streams[0])
+                };
+
+
+                let sessionDescription: RTCSessionDescriptionInit;
+                try {
+                  sessionDescription =
+                    await currentUser.rtcPeerConnection!.createAnswer();
+                } catch (e) {
+                  console.error(e);
+                  toast.error("ERROR creating answer");
+                  return;
+                }
+                const data: ResponseVideoData = {
+                  recv_username: currentUser.username,
+                  sender_username: callingUsername(),
+                  accepted: true,
+                  sdp: sessionDescription
+                };
+                callSocket.emit("video:response", data);
+              }}
+            >
+              Accept
+            </button>
+            <button
+              onclick={async () => {
+                const data: ResponseVideoData = {
+                  recv_username: currentUser.username,
+                  sender_username: callingUsername(),
+                  accepted: false,
+                };
+                callSocket.emit("video:response", data);
+              }}
+            >
+              Decline
+            </button>
+            <div class="modal-action">
+              <label for="call-modal" class="btn">
+                Close!
+              </label>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
   );
 }
-
-
-export const openMediaDevices = async (
-  constaints: MediaStreamConstraints,
-): Promise<MediaStream> => {
-  return await navigator.mediaDevices.getUserMedia(constaints);
-};
-
-export const openCamera = async (options: {
-  cameraId: string;
-  minWidth: number;
-  minHeight: number;
-}) => {
-  const constraints = {
-    audio: true,
-    video: { deviceId: options.cameraId, width: 1280, height: 720 },
-  } as MediaStreamConstraints;
-
-  return await navigator.mediaDevices.getUserMedia(constraints);
-};
-
-export const getConnectedDevices = async (
-  type: MediaDeviceKind,
-): Promise<MediaDeviceInfo[]> => {
-  const devices = await navigator.mediaDevices.enumerateDevices();
-  return devices.filter((device) => device.kind === type);
-};
-

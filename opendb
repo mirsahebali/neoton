@@ -1,7 +1,0 @@
-#!/usr/bin/bash
-
-set -a
-source .env
-set +a
-
-harlequin -a postgres "$DATABASE_URL"

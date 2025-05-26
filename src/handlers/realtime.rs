@@ -2,14 +2,11 @@ use crate::{
     AppState,
     db::{
         mutations::{accept_user_invite_db, add_user_invite},
-        queries::{GetUserBy, get_id_user_db, get_one_user_by_username},
+        queries::{get_id_user_db, get_one_user_by_username},
     },
 };
 use serde::{Deserialize, Serialize};
-use socketioxide::{
-    extract::{AckSender, Data, SocketRef, State},
-    handler::Value,
-};
+use socketioxide::extract::{Data, SocketRef, State};
 use tracing::{error, info};
 
 type Error = sqlx::Error;

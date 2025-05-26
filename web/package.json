@@ -26,6 +26,7 @@
     "lodash": "^4.17.21",
     "socket.io": "^4.8.1",
     "socket.io-client": "^4.8.1",
+    "socket.io-msgpack-parser": "^3.0.2",
     "solid-icons": "^1.1.0",
     "solid-js": "^1.9.5",
     "solid-toast": "^0.5.0",
