@@ -56,6 +56,13 @@ export interface ResponseVideoData {
   sdp?: RTCSessionDescriptionInit;
 }
 
+export interface ICEcandidateData {
+  sender_username: string,
+  recv_username: string,
+  label: number | null,
+  candidate: string,
+}
+
 export interface MessageDataIn {
   sender_id: number;
   recv_username: string;

@@ -1,5 +1,5 @@
 import { createEffect, ParentProps } from "solid-js";
-import { CallingToast, InvitationToast } from "./CustomToasts";
+import { InvitationToast } from "./CustomToasts";
 import { useGetUser } from "../contexts";
 import { callSocket, invitationSocket, messagingSocket } from "../socket";
 import toast from "solid-toast";

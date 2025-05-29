@@ -46,8 +46,10 @@ pub async fn create_video_invite(
 
     let mut kv_pool = app_state.kv_pool.clone();
 
-    if let Err(err) = kv_pool.set::<&str, &str, ()>(&event_name, &room_id).await {
-        error!("ERROR setting value in redis: {event_name}")
+    let key_name = format!("video:{}:{}", &data.sender_username, &data.recv_username);
+
+    if let Err(err) = kv_pool.set::<&str, &str, ()>(&key_name, &room_id).await {
+        error!("ERROR setting value in redis: {key_name}")
     };
     s.join(room_id.clone());
     if let Err(err) = s
@@ -75,8 +77,8 @@ pub struct JoinCallData {
 pub struct ResponseCallData {
     pub recv_username: String,
     pub sender_username: String,
-    pub sdp: Option<rmpv::Value>,
     pub accepted: bool,
+    pub sdp: Option<rmpv::Value>,
 }
 
 pub async fn respond_video_invite(
@@ -84,6 +86,8 @@ pub async fn respond_video_invite(
     Data(data): Data<ResponseCallData>,
     State(app_state): State<AppState>,
 ) {
+    info!("Responding:\n");
+    dbg!(&data);
     let event_name = format!("video:response:{}", &data.sender_username);
     let _ = s
         .broadcast()
@@ -100,7 +104,9 @@ pub async fn respond_video_invite(
         return;
     }
 
-    if let Ok(room_id) = kv_pool.get::<&str, String>(&event_name).await {
+    let key_name = format!("video:{}:{}", &data.sender_username, &data.recv_username);
+    if let Ok(room_id) = kv_pool.get::<&str, String>(&key_name).await {
+        s.join(room_id);
         info!(
             "{} accepted {}'s call",
             &data.recv_username, &data.sender_username
@@ -111,13 +117,26 @@ pub async fn respond_video_invite(
 #[derive(Debug, Serialize, Deserialize)]
 pub struct ICECandidateData {
     pub sender_username: String,
+    pub recv_username: String,
     pub label: i32,
     pub candidate: String,
 }
 
 pub async fn send_ice_candidate(
     s: SocketRef,
-    Data(room_data): Data<ICECandidateData>,
+    Data(data): Data<ICECandidateData>,
     State(app_state): State<AppState>,
 ) {
+    let mut kv_pool = app_state.kv_pool.clone();
+
+    let key_name = format!("video:{}:{}", &data.sender_username, &data.recv_username);
+    if let Ok(room_id) = kv_pool.get::<&str, String>(&key_name).await {
+        let event_name = format!("video:ice_candidate:{}", &data.recv_username);
+        s.to(room_id)
+            .emit(&event_name, &data)
+            .await
+            .map_err(|err| error!("ERROR emitting ice candidate: {}", &event_name));
+
+        info!("ICE cadidate send:\n {:?}", data);
+    };
 }
